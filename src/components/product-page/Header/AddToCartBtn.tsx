@@ -12,6 +12,7 @@ const AddToCartBtn = ({ data }: { data: Product & { quantity: number } }) => {
     (state: RootState) => state.products
   );
 
+  console.log({ data });
   return (
     <button
       type="button"
@@ -21,7 +22,7 @@ const AddToCartBtn = ({ data }: { data: Product & { quantity: number } }) => {
           addToCart({
             id: data.id,
             name: data.title,
-            srcUrl: data.srcUrl,
+            srcurl: data.srcurl,
             price: data.price,
             attributes: [sizeSelection, colorSelection.name],
             discount: data.discount,

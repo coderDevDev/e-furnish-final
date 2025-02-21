@@ -127,7 +127,6 @@ export default function AdminTemplate({
         </header>
 
         {/* Page Content */}
-        <main className="p-6">{children}</main>
       </div>
     </div>
   );

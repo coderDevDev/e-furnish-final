@@ -21,6 +21,8 @@ type ProductCardProps = {
 const ProductCard = ({ data }: ProductCardProps) => {
   const dispatch = useAppDispatch();
 
+  console.log({ data });
+
   return (
     <div className="flex items-start space-x-4">
       <Link
