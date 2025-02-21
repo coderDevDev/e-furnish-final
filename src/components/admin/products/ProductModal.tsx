@@ -6,7 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { X, Upload, Plus, Trash2, Loader2, AlertCircle } from 'lucide-react';
 import { Product } from '@/types/product.types';
-import { supabase } from '@/lib/supabase/config';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { toast } from 'sonner';
 
 interface ProductModalProps {
@@ -77,8 +77,8 @@ export default function ProductModal({
       category: '',
       price: '',
       stock: '',
-      rating: '',
-      sales_count: ''
+      rating: '5',
+      sales_count: '0'
     }
   });
 
@@ -98,6 +98,9 @@ export default function ProductModal({
   );
   const [galleryPreviews, setGalleryPreviews] = useState<ImagePreview[]>([]);
   const [uploading, setUploading] = useState(false);
+
+  // Initialize Supabase client
+  const supabase = createClientComponentClient();
 
   useEffect(() => {
     if (product) {
@@ -166,10 +169,10 @@ export default function ProductModal({
   // Function to remove image from Supabase Storage
   const removeImageFromStorage = async (url: string) => {
     try {
-      // Check if user is authenticated
       const {
         data: { session }
       } = await supabase.auth.getSession();
+
       if (!session) {
         throw new Error('You must be logged in to delete images');
       }
@@ -224,6 +227,7 @@ export default function ProductModal({
       const {
         data: { session }
       } = await supabase.auth.getSession();
+
       if (!session) {
         throw new Error('You must be logged in to upload images');
       }
@@ -278,95 +282,50 @@ export default function ProductModal({
       return publicUrl;
     } catch (error) {
       console.error('Error uploading file:', error);
-      throw new Error(
-        error instanceof Error ? error.message : 'Failed to upload image'
-      );
+      throw error;
     }
   };
 
-  const onSubmit = async (data: ProductFormData) => {
+  const onSubmit = async (formData: ProductFormData) => {
     try {
-      let imageUrls = {
-        mainUrl: product?.srcurl || '',
-        galleryUrls: product?.gallery || []
-      };
+      setUploading(true);
 
-      if (mainImagePreview || galleryPreviews.length > 0) {
-        setUploading(true);
-        try {
-          // Upload main image if exists
-          if (mainImagePreview) {
-            const mainUrl = await uploadToStorage(mainImagePreview.file);
-            imageUrls.mainUrl = mainUrl;
-            if (!product) {
-              imageUrls.galleryUrls = [mainUrl];
-            }
-          }
-
-          // Upload gallery images
-          if (galleryPreviews.length > 0) {
-            const uploadPromises = galleryPreviews.map(preview =>
-              uploadToStorage(preview.file)
-            );
-
-            const newGalleryUrls = await Promise.allSettled(uploadPromises);
-            const successfulUploads = newGalleryUrls
-              .filter(
-                (result): result is PromiseFulfilledResult<string> =>
-                  result.status === 'fulfilled'
-              )
-              .map(result => result.value);
-
-            imageUrls.galleryUrls = product
-              ? [...imageUrls.galleryUrls, ...successfulUploads]
-              : [...imageUrls.galleryUrls, ...successfulUploads];
-          }
-        } catch (error) {
-          toast.error(
-            error instanceof Error ? error.message : 'Failed to upload images'
-          );
-          return;
-        } finally {
-          setUploading(false);
-        }
+      // Upload main image if changed
+      let mainImageUrl = product?.srcurl || '';
+      if (mainImagePreview) {
+        mainImageUrl = await uploadToStorage(mainImagePreview.file);
       }
 
-      // Save product with all data
-      const formattedData = {
-        title: data.title,
-        description: data.description || null,
-        price: Number(data.price),
-        stock: Number(data.stock),
-        category: data.category,
-        rating: data.rating ? Number(data.rating) : null,
-        sales_count: data.sales_count ? Number(data.sales_count) : 0,
-        srcurl: imageUrls.mainUrl || '',
-        gallery: imageUrls.galleryUrls || [],
-        created_at: product?.created_at || new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      };
-
-      // Add type checking
-      const productData: Partial<Product> = formattedData;
-
-      // Cleanup preview URLs
-      mainImagePreview && URL.revokeObjectURL(mainImagePreview.previewUrl);
-      galleryPreviews.forEach(preview =>
-        URL.revokeObjectURL(preview.previewUrl)
+      // Upload gallery images if any new ones
+      const existingGallery = product?.gallery || [];
+      const newGalleryUrls = await Promise.all(
+        galleryPreviews.map(preview => uploadToStorage(preview.file))
       );
 
-      // toast.success(
-      //   product
-      //     ? 'Product updated successfully'
-      //     : 'Product created successfully'
-      // );
+      // Combine all data
+      const productData = {
+        ...(product?.id ? { id: product.id } : {}), // Only include ID for updates
+        title: formData.title,
+        description: formData.description || null,
+        category: formData.category,
+        price: parseFloat(formData.price),
+        stock: parseInt(formData.stock),
+        rating: formData.rating ? parseFloat(formData.rating) : null,
+        sales_count: formData.sales_count ? parseInt(formData.sales_count) : 0,
+        srcurl: mainImageUrl,
+        gallery: [...existingGallery, ...newGalleryUrls]
+      };
+
+      // Save to database
       await onSave(productData);
       onClose();
     } catch (error) {
-      console.error('Failed to save product:', error);
+      console.error('Error saving product:', error);
       toast.error(
         error instanceof Error ? error.message : 'Failed to save product'
       );
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -540,11 +499,11 @@ export default function ProductModal({
                   </div>
                 )}
               </div>
-              {errors.category && (
+              {/* {errors.category && (
                 <p className="mt-1 text-sm text-red-500">
                   {errors.category.message}
                 </p>
-              )}
+              )} */}
             </div>
 
             {/* Description Field */}

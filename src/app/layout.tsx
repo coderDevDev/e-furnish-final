@@ -72,7 +72,7 @@ export default async function RootLayout({
         <body className={`${satoshi.className} h-full antialiased`}>
           <HolyLoader color="#868686" />
           <Providers>{children}</Providers>
-          <Toaster position="top-right" richColors />
+          <Toaster position="top-right" expand={true} richColors richColors />
         </body>
       </html>
     );

@@ -25,19 +25,20 @@ const sidebarLinks = [
     icon: RiDashboardLine
   },
   {
-    label: 'Users',
-    href: '/admin/users',
-    icon: RiUser3Line
-  },
-  {
     label: 'Products',
     href: '/admin/products',
     icon: MdOutlineProductionQuantityLimits
   },
   {
     label: 'Inventory',
-    href: '/admin/inventory',
+    href: '/admin/inventory-supplier',
     icon: MdInventory2
+  },
+
+  {
+    label: 'Users',
+    href: '/admin/users',
+    icon: RiUser3Line
   },
   {
     label: 'Settings',
@@ -61,8 +62,6 @@ export default function AdminTemplate({
       setIsLoading(true);
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
-
-      // Use window.location for a full page refresh after logout
       window.location.href = '/login';
     } catch (error) {
       console.error('Error logging out:', error);
@@ -73,26 +72,26 @@ export default function AdminTemplate({
   };
 
   return (
-    <div className="min-h-screen bg-[#F8F9FA]">
+    <div className="flex h-screen bg-slate-50">
       {/* Sidebar */}
       <aside
         className={cn(
-          'fixed left-0 top-0 z-40 h-screen bg-white shadow-sm transition-all duration-300',
+          'fixed left-0 top-0 z-40 h-full bg-white transition-all duration-300',
           isSidebarOpen ? 'w-64' : 'w-20'
         )}>
-        <div className="flex h-full flex-col">
+        <div className="flex h-full flex-col border-r border-slate-100">
           {/* Sidebar Header */}
-          <div className="flex h-16 items-center justify-between border-b border-slate-100 px-4">
+          <div className="flex h-16 items-center justify-between px-4">
             {isSidebarOpen && (
               <span className="text-xl font-semibold text-slate-900">
                 Admin
               </span>
             )}
-            <button
+            {/* <button
               onClick={() => setIsSidebarOpen(!isSidebarOpen)}
               className="rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600">
               <FiMenu size={20} />
-            </button>
+            </button> */}
           </div>
 
           {/* Sidebar Links */}
@@ -146,33 +145,13 @@ export default function AdminTemplate({
       </aside>
 
       {/* Main Content */}
-      <div
+      <main
         className={cn(
-          'min-h-screen transition-all duration-300',
-          isSidebarOpen ? 'ml-64' : 'ml-20'
+          'flex-1 overflow-x-hidden transition-all duration-300',
+          isSidebarOpen ? 'ml-40' : 'ml-20'
         )}>
-        {/* Top Header */}
-        {/* <header className="sticky top-0 z-30 flex h-16 items-center justify-between bg-white px-6 shadow-sm">
-          <h1 className="text-xl font-semibold text-slate-900">
-            {sidebarLinks.find(link => link.href === pathname)?.label ||
-              'Dashboard'}
-          </h1>
-          <div className="flex items-center space-x-4">
-            <button className="relative text-slate-400 hover:text-slate-600 transition-colors">
-              <IoMdNotificationsOutline size={24} />
-              <span className="absolute -right-1 -top-1 h-4 w-4 rounded-full bg-red-500 text-[10px] font-medium text-white flex items-center justify-center">
-                3
-              </span>
-            </button>
-            <button className="text-slate-400 hover:text-slate-600 transition-colors">
-              <RiSettings4Line size={24} />
-            </button>
-          </div>
-        </header> */}
-
-        {/* Page Content */}
-        <main className="p-6">{children}</main>
-      </div>
+        <div className="px-5 py-4">{children}</div>
+      </main>
     </div>
   );
 }

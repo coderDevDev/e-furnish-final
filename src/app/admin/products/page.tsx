@@ -46,21 +46,14 @@ export default function ProductsPage() {
   // Handle product creation/update
   const handleSaveProduct = async (productData: Partial<Product>) => {
     try {
-      if (selectedProduct) {
-        // Update existing product - convert id to string if needed
-        await productService.updateProduct(
-          String(selectedProduct.id),
-          productData
-        );
+      if (productData.id) {
+        // Update existing product
+        await productService.updateProduct(productData.id, productData);
         toast.success('Product updated successfully');
       } else {
-        // Create new product
-        const newProduct = {
-          ...productData,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        };
-        await productService.createProduct(newProduct);
+        // Create new product without ID (will be generated in service)
+        const { id, ...newProductData } = productData;
+        await productService.createProduct(newProductData);
         toast.success('Product created successfully');
       }
 

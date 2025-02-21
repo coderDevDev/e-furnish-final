@@ -44,32 +44,68 @@ class ProductService {
   }
 
   async createProduct(product: Partial<Product>): Promise<Product> {
-    const { data, error } = await supabase
-      .from('products')
-      .insert([product])
-      .select()
-      .single();
+    try {
+      // Add timestamps and generate UUID for new products
+      const productWithDefaults = {
+        ...product,
+        id: crypto.randomUUID(), // Generate UUID for new products
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
 
-    if (error) {
-      throw new Error('Failed to create product');
+      const { data, error } = await supabase
+        .from('products')
+        .insert([productWithDefaults])
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Create product error:', error);
+        throw error;
+      }
+
+      if (!data) {
+        throw new Error('Failed to create product');
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Create product error:', error);
+      throw error;
     }
-
-    return data;
   }
 
-  async updateProduct(id: string, product: Partial<Product>): Promise<Product> {
-    const { data, error } = await supabase
-      .from('products')
-      .update(product)
-      .eq('id', id)
-      .select()
-      .single();
+  async updateProduct(
+    id: string,
+    productData: Partial<Product>
+  ): Promise<Product> {
+    try {
+      console.log('Updating product:', { id, productData });
 
-    if (error) {
-      throw new Error('Failed to update product');
+      const { data, error } = await supabase
+        .from('products')
+        .update({
+          ...productData,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', id)
+        .select('*')
+        .single();
+
+      if (error) {
+        console.error('Supabase update error:', error);
+        throw error;
+      }
+
+      if (!data) {
+        throw new Error(`No product found with id: ${id}`);
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Update product error:', error);
+      throw error;
     }
-
-    return data;
   }
 
   async deleteProduct(id: string): Promise<void> {
