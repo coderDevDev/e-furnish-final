@@ -6,16 +6,19 @@ export type Discount = {
 export interface Product {
   id: string;
   title: string;
-  category: string;
+  description: string | null;
   price: number;
-  srcurl: string; // Keep lowercase to match database
-  gallery: string[]; // Add gallery back to the type
-  rating: number;
-  salesCount: number;
-  createdAt: string;
+  stock: number;
+  category: string;
+  thumbnail?: string;
+  gallery: string[];
+  rating: number | null;
+  sales_count: number;
+  created_at: string;
+  updated_at: string;
   discount?: {
     amount: number;
     percentage: number;
   };
-  stock: number;
+  srcurl: string;
 }

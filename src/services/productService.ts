@@ -1,7 +1,7 @@
 import { Product } from '@/types/product.types';
 import { supabase } from '@/lib/supabase/config';
 
-class ProductService {
+export class ProductService {
   async getAllProducts(): Promise<Product[]> {
     const { data, error } = await supabase
       .from('products')
@@ -29,33 +29,47 @@ class ProductService {
     return data;
   }
 
-  async createProduct(product: Partial<Product>): Promise<Product> {
-    const { data, error } = await supabase
-      .from('products')
-      .insert([product])
-      .select()
-      .single();
+  async createProduct(productData: Partial<Product>): Promise<Product> {
+    try {
+      const { data, error } = await supabase
+        .from('products')
+        .insert([productData])
+        .select()
+        .single();
 
-    if (error) {
-      throw new Error('Failed to create product');
+      if (error) throw error;
+      if (!data) throw new Error('Failed to create product');
+
+      return data;
+    } catch (error) {
+      console.error('Create product error:', error);
+      throw error;
     }
-
-    return data;
   }
 
-  async updateProduct(id: string, product: Partial<Product>): Promise<Product> {
-    const { data, error } = await supabase
-      .from('products')
-      .update(product)
-      .eq('id', id)
-      .select()
-      .single();
+  async updateProduct(
+    id: string,
+    productData: Partial<Product>
+  ): Promise<Product> {
+    try {
+      const { data, error } = await supabase
+        .from('products')
+        .update({
+          ...productData,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', id)
+        .select()
+        .single();
 
-    if (error) {
-      throw new Error('Failed to update product');
+      if (error) throw error;
+      if (!data) throw new Error('Failed to update product');
+
+      return data;
+    } catch (error) {
+      console.error('Update product error:', error);
+      throw error;
     }
-
-    return data;
   }
 
   async deleteProduct(id: string): Promise<void> {

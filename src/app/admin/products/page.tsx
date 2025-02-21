@@ -28,6 +28,8 @@ export default function ProductsPage() {
     try {
       setIsLoading(true);
       const data = await productService.getAllProducts();
+
+      console.log({ data });
       setProducts(data);
     } catch (error) {
       toast.error('Failed to fetch products');
@@ -45,20 +47,31 @@ export default function ProductsPage() {
   const handleSaveProduct = async (productData: Partial<Product>) => {
     try {
       if (selectedProduct) {
-        // Update existing product
-        await productService.updateProduct(selectedProduct.id, productData);
+        // Update existing product - convert id to string if needed
+        await productService.updateProduct(
+          String(selectedProduct.id),
+          productData
+        );
         toast.success('Product updated successfully');
       } else {
         // Create new product
-        await productService.createProduct(productData);
+        const newProduct = {
+          ...productData,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        };
+        await productService.createProduct(newProduct);
         toast.success('Product created successfully');
       }
-      fetchProducts(); // Refresh the list
+
+      // Refresh product list
+      fetchProducts();
       setIsModalOpen(false);
-      setSelectedProduct(null);
     } catch (error) {
-      toast.error('Failed to save product');
-      console.error(error);
+      console.error('Failed to save product:', error);
+      toast.error(
+        error instanceof Error ? error.message : 'Failed to save product'
+      );
     }
   };
 

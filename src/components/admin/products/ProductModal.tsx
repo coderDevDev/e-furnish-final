@@ -23,6 +23,7 @@ interface ImagePreview {
 
 const productSchema = z.object({
   title: z.string().min(3, 'Title must be at least 3 characters'),
+  description: z.string().optional(),
   category: z.string().min(1, 'Please select a category'),
   price: z
     .string()
@@ -38,6 +39,7 @@ const productSchema = z.object({
     }),
   rating: z
     .string()
+    .optional()
     .refine(
       val =>
         !val || (!isNaN(Number(val)) && Number(val) >= 0 && Number(val) <= 5),
@@ -45,8 +47,9 @@ const productSchema = z.object({
         message: 'Rating must be between 0 and 5'
       }
     ),
-  salesCount: z
+  sales_count: z
     .string()
+    .optional()
     .refine(val => !val || (!isNaN(Number(val)) && Number(val) >= 0), {
       message: 'Sales count must be a non-negative number'
     })
@@ -70,22 +73,24 @@ export default function ProductModal({
     resolver: zodResolver(productSchema),
     defaultValues: {
       title: '',
+      description: '',
       category: '',
       price: '',
       stock: '',
       rating: '',
-      salesCount: ''
+      sales_count: ''
     }
   });
 
   const [formData, setFormData] = useState({
     title: '',
+    description: '',
     category: '',
     price: '',
     srcurl: '',
     gallery: [] as string[],
     rating: '',
-    salesCount: ''
+    sales_count: ''
   });
 
   const [mainImagePreview, setMainImagePreview] = useState<ImagePreview | null>(
@@ -98,20 +103,22 @@ export default function ProductModal({
     if (product) {
       reset({
         title: product.title,
+        description: product.description || '',
         category: product.category,
         price: product.price.toString(),
         stock: product.stock?.toString() || '0',
-        rating: product.rating.toString(),
-        salesCount: product.salesCount?.toString() || '0'
+        rating: product.rating?.toString() || '',
+        sales_count: product.sales_count?.toString() || '0'
       });
       setFormData({
         title: product.title,
+        description: product.description || '',
         category: product.category,
         price: product.price.toString(),
         srcurl: product.srcurl,
         gallery: product.gallery || [],
-        rating: product.rating.toString(),
-        salesCount: product.salesCount?.toString() || '0'
+        rating: product.rating?.toString() || '',
+        sales_count: product.sales_count?.toString() || '0'
       });
     }
   }, [product, reset]);
@@ -325,15 +332,22 @@ export default function ProductModal({
       }
 
       // Save product with all data
-      await onSave({
-        ...data,
-        price: parseFloat(data.price),
-        stock: parseInt(data.stock),
-        rating: data.rating ? parseFloat(data.rating) : 0,
-        salesCount: data.salesCount ? parseInt(data.salesCount) : 0,
-        srcurl: imageUrls.mainUrl,
-        gallery: imageUrls.galleryUrls.slice(0, 5)
-      });
+      const formattedData = {
+        title: data.title,
+        description: data.description || null,
+        price: Number(data.price),
+        stock: Number(data.stock),
+        category: data.category,
+        rating: data.rating ? Number(data.rating) : null,
+        sales_count: data.sales_count ? Number(data.sales_count) : 0,
+        srcurl: imageUrls.mainUrl || '',
+        gallery: imageUrls.galleryUrls || [],
+        created_at: product?.created_at || new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+
+      // Add type checking
+      const productData: Partial<Product> = formattedData;
 
       // Cleanup preview URLs
       mainImagePreview && URL.revokeObjectURL(mainImagePreview.previewUrl);
@@ -341,11 +355,12 @@ export default function ProductModal({
         URL.revokeObjectURL(preview.previewUrl)
       );
 
-      toast.success(
-        product
-          ? 'Product updated successfully'
-          : 'Product created successfully'
-      );
+      // toast.success(
+      //   product
+      //     ? 'Product updated successfully'
+      //     : 'Product created successfully'
+      // );
+      await onSave(productData);
       onClose();
     } catch (error) {
       console.error('Failed to save product:', error);
@@ -435,14 +450,33 @@ export default function ProductModal({
         {label}
       </label>
       <div className="relative mt-1">
-        <input
-          type={type}
-          {...register(name)}
-          className={`w-full rounded-xl border ${
-            errors[name] ? 'border-red-300' : 'border-slate-200'
-          } px-4 py-2 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary`}
-          {...props}
-        />
+        {props.as === 'textarea' ? (
+          <textarea
+            {...register(name)}
+            className={`w-full rounded-xl border ${
+              errors[name] ? 'border-red-300' : 'border-slate-200'
+            } px-4 py-2 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary`}
+            {...props}
+          />
+        ) : props.as === 'select' ? (
+          <select
+            {...register(name)}
+            className={`w-full rounded-xl border ${
+              errors[name] ? 'border-red-300' : 'border-slate-200'
+            } px-4 py-2 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary`}
+            {...props}>
+            {props.children}
+          </select>
+        ) : (
+          <input
+            type={type}
+            {...register(name)}
+            className={`w-full rounded-xl border ${
+              errors[name] ? 'border-red-300' : 'border-slate-200'
+            } px-4 py-2 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary`}
+            {...props}
+          />
+        )}
         {errors[name] && (
           <div className="absolute right-0 top-0 flex h-full items-center pr-3">
             <AlertCircle className="h-5 w-5 text-red-500" />
@@ -490,20 +524,16 @@ export default function ProductModal({
             <FormField label="Title" name="title" />
 
             <div>
-              <label className="block text-sm font-medium text-slate-700">
+              {/* <label className="block text-sm font-medium text-slate-700">
                 Category
-              </label>
+              </label> */}
               <div className="relative mt-1">
-                <select
-                  {...register('category')}
-                  className={`w-full rounded-xl border ${
-                    errors.category ? 'border-red-300' : 'border-slate-200'
-                  } px-4 py-2 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary`}>
+                <FormField label="Category" name="category" as="select">
                   <option value="">Select a category</option>
                   <option value="Sofas">Sofas</option>
                   <option value="Chairs">Chairs</option>
                   <option value="Tables">Tables</option>
-                </select>
+                </FormField>
                 {errors.category && (
                   <div className="absolute right-0 top-0 flex h-full items-center pr-3">
                     <AlertCircle className="h-5 w-5 text-red-500" />
@@ -517,6 +547,17 @@ export default function ProductModal({
               )}
             </div>
 
+            {/* Description Field */}
+            <FormField
+              label="Description"
+              name="description"
+              as="textarea"
+              rows={7}
+              placeholder="Enter product description"
+              className="w-full rounded-xl border border-slate-200 px-4 py-2 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary resize-none"
+            />
+
+            {/* Price and Stock Fields */}
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 label="Price"
@@ -534,6 +575,7 @@ export default function ProductModal({
               />
             </div>
 
+            {/* Rating and Sales Count Fields */}
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 label="Rating"
@@ -545,7 +587,7 @@ export default function ProductModal({
               />
               <FormField
                 label="Sales Count"
-                name="salesCount"
+                name="sales_count"
                 type="number"
                 min="0"
                 step="1"
