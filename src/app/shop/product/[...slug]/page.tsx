@@ -10,11 +10,10 @@ export default async function ProductPage({
 }: {
   params: { slug: string[] };
 }) {
+  console.log({ params });
   try {
     // Fetch the specific product
-    const productData = await productService.getProductById(
-      Number(params.slug[0])
-    );
+    const productData = await productService.getProduct(params.slug[0]);
 
     // Fetch related products
     const relatedProducts = await productService.getProductsByCategory(

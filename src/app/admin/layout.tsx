@@ -1,4 +1,7 @@
 import type { Metadata } from 'next';
+import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
+import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
 import AdminTemplate from './template';
 import { Toaster } from 'sonner';
 
@@ -7,11 +10,44 @@ export const metadata: Metadata = {
   description: 'Admin dashboard for Shopco'
 };
 
-export default function AdminLayout({
+async function checkAdminAccess() {
+  const supabase = createServerComponentClient({ cookies });
+
+  try {
+    // Check if user is authenticated
+    const {
+      data: { session }
+    } = await supabase.auth.getSession();
+
+    if (!session) {
+      return false;
+    }
+
+    // Check if user has admin role
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', session.user.id)
+      .single();
+
+    return profile?.role === 'admin';
+  } catch (error) {
+    console.error('Error checking admin access:', error);
+    return false;
+  }
+}
+
+export default async function AdminLayout({
   children
 }: {
   children: React.ReactNode;
 }) {
+  const isAdmin = await checkAdminAccess();
+
+  if (!isAdmin) {
+    redirect('/login');
+  }
+
   return (
     <>
       <AdminTemplate>{children}</AdminTemplate>

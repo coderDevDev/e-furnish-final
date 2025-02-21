@@ -10,15 +10,10 @@ export interface Product {
   price: number;
   stock: number;
   category: string;
-  thumbnail?: string;
+  srcurl: string;
   gallery: string[];
   rating: number | null;
   sales_count: number;
   created_at: string;
   updated_at: string;
-  discount?: {
-    amount: number;
-    percentage: number;
-  };
-  srcurl: string;
 }

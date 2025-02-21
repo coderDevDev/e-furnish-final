@@ -3,19 +3,23 @@ import { supabase } from '@/lib/supabase/config';
 
 export class ProductService {
   async getAllProducts(): Promise<Product[]> {
-    const { data, error } = await supabase
-      .from('products')
-      .select('*')
-      .order('created_at', { ascending: false });
+    try {
+      const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .order('created_at', { ascending: false });
 
-    if (error) {
-      throw new Error('Failed to fetch products');
+      if (error) throw error;
+
+      console.log('Fetched products:', data);
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching products:', error);
+      throw error;
     }
-
-    return data || [];
   }
 
-  async getProduct(id: string): Promise<Product> {
+  async getProductById(id: string): Promise<Product> {
     const { data, error } = await supabase
       .from('products')
       .select('*')
@@ -78,6 +82,20 @@ export class ProductService {
     if (error) {
       throw new Error('Failed to delete product');
     }
+  }
+
+  async getProductsByCategory(category: string): Promise<Product[]> {
+    const { data, error } = await supabase
+      .from('products')
+      .select('*')
+      .eq('category', category)
+      .limit(5);
+
+    if (error) {
+      throw new Error('Failed to fetch products by category');
+    }
+
+    return data || [];
   }
 }
 

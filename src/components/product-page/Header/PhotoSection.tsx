@@ -5,6 +5,7 @@ import Image from 'next/image';
 import React, { useState } from 'react';
 import { useAppSelector } from '@/lib/hooks/redux';
 import { RootState } from '@/lib/store';
+import { cn } from '@/lib/utils';
 
 const PhotoSection = ({ data }: { data: Product }) => {
   const [selected, setSelected] = useState<string>(data.srcurl);
@@ -51,8 +52,6 @@ const PhotoSection = ({ data }: { data: Product }) => {
           ))}
         </div>
       )}
-
-      {console.log({ colorSelection })}
 
       <div className="flex items-center justify-center bg-[#F0EEED] rounded-[13px] sm:rounded-[20px] w-full sm:w-96 md:w-full mx-auto h-full max-h-[530px] min-h-[330px] lg:min-h-[380px] xl:min-h-[530px] overflow-hidden mb-3 lg:mb-0">
         <div className="relative w-full h-full">

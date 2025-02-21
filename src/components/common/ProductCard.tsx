@@ -12,7 +12,7 @@ const ProductCard = ({ data }: ProductCardProps) => {
   console.log({ data });
   return (
     <Link
-      href={`/shop/product/${data.id}/${data.title.split(' ').join('-')}`}
+      href={`/shop/product/${data.id}`}
       className="flex flex-col items-start aspect-auto">
       <div className="bg-[#F0EEED] rounded-[13px] lg:rounded-[20px] w-full lg:max-w-[295px] aspect-square mb-2.5 xl:mb-4 overflow-hidden">
         <Image

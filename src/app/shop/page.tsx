@@ -1,3 +1,6 @@
+'use client';
+
+import { useEffect, useState } from 'react';
 import BreadcrumbShop from '@/components/shop-page/BreadcrumbShop';
 import {
   Select,
@@ -19,11 +22,59 @@ import {
   PaginationNext,
   PaginationPrevious
 } from '@/components/ui/pagination';
-import { productService } from '@/lib/services/productService';
+import { productService } from '@/services/productService';
+import { Product } from '@/types/product.types';
+import { toast } from 'sonner';
 
-export default async function ShopPage() {
-  // Fetch all products
-  const products = await productService.getAllProducts();
+export default function ShopPage() {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const data = await productService.getAllProducts();
+        console.log('Products:', data);
+        setProducts(data);
+      } catch (error) {
+        console.error('Error fetching products:', error);
+        setError('Failed to load products');
+        toast.error('Failed to load products');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProducts();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex h-[calc(100vh-4rem)] items-center justify-center">
+        <div className="text-lg">Loading products...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex h-[calc(100vh-4rem)] items-center justify-center">
+        <div className="text-lg text-red-500">{error}</div>
+      </div>
+    );
+  }
+
+  if (!products.length) {
+    return (
+      <div className="flex h-[calc(100vh-4rem)] items-center justify-center">
+        <div className="text-lg">No products found</div>
+      </div>
+    );
+  }
+
   const totalProducts = products.length;
   const productsPerPage = 9;
 

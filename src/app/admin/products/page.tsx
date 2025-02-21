@@ -186,10 +186,10 @@ export default function ProductsPage() {
                   <td className="px-4 py-3 text-slate-600">₱{product.price}</td>
                   <td className="px-4 py-3 text-slate-600">{product.rating}</td>
                   <td className="px-4 py-3 text-slate-600">
-                    {product.salesCount}
+                    {product.sales_count}
                   </td>
                   <td className="px-4 py-3 text-slate-600">
-                    {product.createdAt}
+                    {product.created_at}
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center space-x-2">
