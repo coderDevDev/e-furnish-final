@@ -3,12 +3,19 @@ export type Discount = {
   percentage: number;
 };
 
-export type Product = {
-  id: number;
+export interface Product {
+  id: string;
   title: string;
-  srcUrl: string;
-  gallery?: string[];
+  category: string;
   price: number;
-  discount: Discount;
+  srcurl: string; // Keep lowercase to match database
+  gallery: string[]; // Add gallery back to the type
   rating: number;
-};
+  salesCount: number;
+  createdAt: string;
+  discount?: {
+    amount: number;
+    percentage: number;
+  };
+  stock: number;
+}

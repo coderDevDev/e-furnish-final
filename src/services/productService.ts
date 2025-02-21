@@ -29,20 +29,6 @@ class ProductService {
     return data;
   }
 
-  async getProductsByCategory(category: string): Promise<Product[]> {
-    const { data, error } = await supabase
-      .from('products')
-      .select('*')
-      .eq('category', category)
-      .order('created_at', { ascending: false });
-
-    if (error) {
-      throw new Error('Failed to fetch products by category');
-    }
-
-    return data || [];
-  }
-
   async createProduct(product: Partial<Product>): Promise<Product> {
     const { data, error } = await supabase
       .from('products')
@@ -78,34 +64,6 @@ class ProductService {
     if (error) {
       throw new Error('Failed to delete product');
     }
-  }
-
-  async getNewArrivals(): Promise<Product[]> {
-    const { data, error } = await supabase
-      .from('products')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .limit(4);
-
-    if (error) {
-      throw new Error('Failed to fetch new arrivals');
-    }
-
-    return data || [];
-  }
-
-  async getTopSelling(): Promise<Product[]> {
-    const { data, error } = await supabase
-      .from('products')
-      .select('*')
-      .order('sales_count', { ascending: false })
-      .limit(4);
-
-    if (error) {
-      throw new Error('Failed to fetch top selling products');
-    }
-
-    return data || [];
   }
 }
 

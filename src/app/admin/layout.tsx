@@ -1,7 +1,6 @@
-import { satoshi } from '@/styles/fonts';
-import '@/styles/globals.css';
 import type { Metadata } from 'next';
 import AdminTemplate from './template';
+import { Toaster } from 'sonner';
 
 export const metadata: Metadata = {
   title: 'Admin Panel - Shopco',
@@ -14,10 +13,9 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className="h-full">
-      <body className={`${satoshi.className} h-full antialiased`}>
-        <AdminTemplate>{children}</AdminTemplate>
-      </body>
-    </html>
+    <>
+      <AdminTemplate>{children}</AdminTemplate>
+      <Toaster position="top-right" richColors />
+    </>
   );
 }

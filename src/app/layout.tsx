@@ -7,6 +7,8 @@ import Footer from '@/components/layout/Footer';
 import HolyLoader from 'holy-loader';
 import Providers from './providers';
 import QueryProvider from '@/providers/QueryProvider';
+import { headers } from 'next/headers';
+import { Toaster } from 'sonner';
 
 export const metadata: Metadata = {
   title: 'Shopco',
@@ -22,6 +24,22 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Get the current path from headers
+  const headersList = headers();
+  const pathname = headersList.get('x-pathname') || '';
+  const isAdmin = pathname.startsWith('/admin');
+
+  if (isAdmin) {
+    return (
+      <html lang="en" className="h-full">
+        <body className={`${satoshi.className} h-full antialiased`}>
+          <HolyLoader color="#868686" />
+          <Providers>{children}</Providers>
+        </body>
+      </html>
+    );
+  }
+
   return (
     <html lang="en">
       <body className={satoshi.className}>
@@ -32,6 +50,7 @@ export default function RootLayout({
           {children}
         </Providers>
         <Footer />
+        <Toaster position="top-right" richColors />
       </body>
     </html>
   );
