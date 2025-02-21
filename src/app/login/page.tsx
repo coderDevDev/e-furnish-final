@@ -1,8 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabase/config';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -10,7 +9,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const router = useRouter();
+  const supabase = createClientComponentClient();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,17 +24,8 @@ export default function LoginPage() {
       if (error) throw error;
 
       if (data.session) {
-        // Set session in localStorage
-        await supabase.auth.setSession(data.session);
-
-        // Show success message
         toast.success('Logged in successfully');
-
-        // Wait a bit for the session to be properly set
-        setTimeout(() => {
-          // Use window.location for a full page refresh
-          window.location.href = '/admin';
-        }, 500);
+        window.location.href = '/admin';
       }
     } catch (error) {
       console.error('Login error:', error);

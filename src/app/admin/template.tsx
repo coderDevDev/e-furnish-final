@@ -2,16 +2,14 @@
 
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
-import React, { useState, useEffect } from 'react';
-import { IoMdNotificationsOutline } from 'react-icons/io';
+import { usePathname } from 'next/navigation';
+import React, { useState } from 'react';
 import { RiDashboardLine, RiSettings4Line, RiUser3Line } from 'react-icons/ri';
 import {
   MdInventory2,
   MdOutlineProductionQuantityLimits
 } from 'react-icons/md';
 import { FiMenu } from 'react-icons/fi';
-import { supabase } from '@/lib/supabase/config';
 
 const sidebarLinks = [
   {
@@ -48,46 +46,6 @@ export default function AdminTemplate({
 }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const pathname = usePathname();
-  const router = useRouter();
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const {
-          data: { session }
-        } = await supabase.auth.getSession();
-
-        if (!session) {
-          window.location.href = '/login';
-          return;
-        }
-
-        setIsLoading(false);
-      } catch (error) {
-        console.error('Auth check error:', error);
-        window.location.href = '/login';
-      }
-    };
-
-    checkAuth();
-
-    const {
-      data: { subscription }
-    } = supabase.auth.onAuthStateChange((event, session) => {
-      if (!session) {
-        window.location.href = '/login';
-      }
-    });
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, []);
-
-  if (isLoading) {
-    return <div>Loading...</div>;
-  }
 
   return (
     <div className="min-h-screen bg-[#F8F9FA]">

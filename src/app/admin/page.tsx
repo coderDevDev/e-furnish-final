@@ -1,3 +1,7 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import { supabase } from '@/lib/supabase/config';
 import { Users, Package, DollarSign, PackageSearch } from 'lucide-react';
 
 const stats = [
@@ -27,9 +31,31 @@ const stats = [
   }
 ];
 
-export default function AdminDashboard() {
+export default function AdminPage() {
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const checkSession = async () => {
+      const {
+        data: { session }
+      } = await supabase.auth.getSession();
+      setLoading(false);
+    };
+
+    checkSession();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex h-[calc(100vh-4rem)] items-center justify-center">
+        <div className="text-lg">Loading...</div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
+      <h1 className="text-2xl font-semibold">Dashboard</h1>
       {/* Stats Grid */}
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
         {stats.map(stat => (

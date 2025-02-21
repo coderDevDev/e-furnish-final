@@ -7,41 +7,33 @@ export async function middleware(request: NextRequest) {
   const supabase = createMiddlewareClient({ req: request, res });
 
   try {
-    // Refresh session if expired
+    // Refresh session
     const {
-      data: { session },
-      error
+      data: { session }
     } = await supabase.auth.getSession();
 
-    // Debug session state
-    console.log('Session state:', { session, path: request.nextUrl.pathname });
+    // For debugging
+    console.log('Middleware session:', {
+      hasSession: !!session,
+      path: request.nextUrl.pathname,
+      userId: session?.user?.id
+    });
 
     // Protect admin routes
     if (request.nextUrl.pathname.startsWith('/admin')) {
       if (!session) {
-        // No session, redirect to login
-        const redirectUrl = new URL('/login', request.url);
-        return NextResponse.redirect(redirectUrl);
+        return NextResponse.redirect(new URL('/login', request.url));
       }
-      // Has session, allow access
-      return res;
     }
 
-    // Handle login page access
-    if (request.nextUrl.pathname === '/login') {
-      if (session) {
-        // Already logged in, redirect to admin
-        const redirectUrl = new URL('/admin', request.url);
-        return NextResponse.redirect(redirectUrl);
-      }
-      // Not logged in, allow access to login
-      return res;
+    // Handle login page
+    if (request.nextUrl.pathname === '/login' && session) {
+      return NextResponse.redirect(new URL('/admin', request.url));
     }
 
     return res;
   } catch (error) {
     console.error('Middleware error:', error);
-    // On error, allow request but log it
     return res;
   }
 }
@@ -49,12 +41,12 @@ export async function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     /*
-     * Match all request paths except:
+     * Match all request paths except for the ones starting with:
+     * - api/auth (auth callback)
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
-     * - public folder
      */
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)'
+    '/((?!api/auth|_next/static|_next/image|favicon.ico).*)'
   ]
 };
