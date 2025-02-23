@@ -74,10 +74,10 @@ const ProductCard = ({ data }: ProductCardProps) => {
         </div>
         <div className="flex items-center flex-wrap justify-between">
           <div className="flex items-center space-x-[5px] xl:space-x-2.5">
-            {data.discount.percentage > 0 ? (
+            {data.discount?.percentage > 0 ? (
               <span className="font-bold text-black text-xl xl:text-2xl">
                 {`$${Math.round(
-                  data.price - (data.price * data.discount.percentage) / 100
+                  data.price - (data.price * data.discount?.percentage) / 100
                 )}`}
               </span>
             ) : data.discount.amount > 0 ? (

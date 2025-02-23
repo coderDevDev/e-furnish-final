@@ -13,6 +13,15 @@ import Image from 'next/image';
 import InputGroup from '@/components/ui/input-group';
 import ResTopNavbar from './ResTopNavbar';
 import CartBtn from './CartBtn';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger
+} from '@/components/ui/dropdown-menu';
+import { LogOut, User } from 'lucide-react';
+import { toast } from 'sonner';
 
 const data: NavMenu = [
   // {
@@ -31,6 +40,21 @@ const data: NavMenu = [
 ];
 
 const TopNavbar = () => {
+  const supabase = createClientComponentClient();
+
+  const handleLogout = async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+
+      toast.success('Logged out successfully');
+      window.location.href = '/login';
+    } catch (error) {
+      console.error('Error logging out:', error);
+      toast.error('Failed to log out');
+    }
+  };
+
   return (
     <nav className="sticky top-0 bg-white z-20 border-b border-secondary  border-b-2">
       <div className="flex relative max-w-frame mx-auto items-center justify-between md:justify-start py-5 md:py-6 px-4 xl:px-0">
@@ -91,16 +115,25 @@ const TopNavbar = () => {
             />
           </Link>
           <CartBtn />
-          <Link href="/#signin" className="p-1">
-            <Image
-              priority
-              src="/icons/user.svg"
-              height={100}
-              width={100}
-              alt="user"
-              className="max-w-[22px] max-h-[22px]"
-            />
-          </Link>
+          <DropdownMenu>
+            <DropdownMenuTrigger className="p-1 outline-none">
+              <User className="w-[22px] h-[22px]" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuItem asChild>
+                <Link href="/profile" className="cursor-pointer">
+                  <User className="mr-2 h-4 w-4" />
+                  Profile
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                className="text-red-600 focus:text-red-600 cursor-pointer"
+                onClick={handleLogout}>
+                <LogOut className="mr-2 h-4 w-4" />
+                Logout
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
     </nav>

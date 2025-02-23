@@ -430,7 +430,11 @@ export default function InventoryManagement({
               <CardDescription>Manage your supplier offers</CardDescription>
             </CardHeader>
             <CardContent>
-              <SupplierOfferTable offers={offers} onRefresh={fetchOffers} />
+              <SupplierOfferTable
+                offers={offers}
+                suppliers={suppliers}
+                onRefresh={fetchOffers}
+              />
             </CardContent>
           </Card>
         </TabsContent>

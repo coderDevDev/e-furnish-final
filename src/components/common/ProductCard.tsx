@@ -10,6 +10,15 @@ type ProductCardProps = {
 
 const ProductCard = ({ data }: ProductCardProps) => {
   console.log({ data });
+
+  if (!data.discount) {
+    data.discount = {}; // Initialize discount object if it's null or undefined
+  }
+
+  if (data.discount.percentage == null) {
+    data.discount.percentage = 0;
+  }
+
   return (
     <Link
       href={`/shop/product/${data.id}`}

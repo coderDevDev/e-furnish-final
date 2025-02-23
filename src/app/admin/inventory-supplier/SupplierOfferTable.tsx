@@ -24,7 +24,8 @@ import {
   Calendar,
   Clock,
   Eye,
-  Loader2
+  Loader2,
+  Plus
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
@@ -40,14 +41,17 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import SupplierOfferDetailsModal from './SupplierOfferDetailsModal';
+import AddSupplierOfferForm from './AddSupplierOfferForm';
 
 interface SupplierOfferTableProps {
   offers: SupplierOffer[];
+  suppliers: Supplier[];
   onRefresh: () => Promise<void>;
 }
 
 export default function SupplierOfferTable({
   offers,
+  suppliers,
   onRefresh
 }: SupplierOfferTableProps) {
   const [searchTerm, setSearchTerm] = useState('');
@@ -62,6 +66,7 @@ export default function SupplierOfferTable({
   const [confirmAction, setConfirmAction] = useState<
     'approve' | 'reject' | null
   >(null);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
   // Filter offers based on search term
   const filteredOffers = offers.filter(offer => {
@@ -149,6 +154,11 @@ export default function SupplierOfferTable({
             className="pl-8"
           />
         </div>
+        <Button
+          onClick={() => setIsAddModalOpen(true)}
+          className="bg-primary hover:bg-primary/90 text-white">
+          <Plus className="mr-2 h-4 w-4" /> Add Supplier Offer
+        </Button>
       </div>
 
       <div className="rounded-lg border bg-card shadow-sm">
@@ -323,6 +333,19 @@ export default function SupplierOfferTable({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Add Supplier Offer Modal */}
+      <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
+        <DialogContent className="max-w-2xl p-0">
+          <AddSupplierOfferForm
+            suppliers={suppliers}
+            onClose={() => {
+              setIsAddModalOpen(false);
+              onRefresh();
+            }}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

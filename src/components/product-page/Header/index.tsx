@@ -9,6 +9,14 @@ import SizeSelection from './SizeSelection';
 import AddToCardSection from './AddToCardSection';
 
 const Header = ({ data }: { data: Product }) => {
+  if (!data.discount) {
+    data.discount = {}; // Initialize discount object if it's null or undefined
+  }
+
+  if (data.discount.percentage == null) {
+    data.discount.percentage = 0;
+  }
+
   return (
     <>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">

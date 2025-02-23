@@ -26,7 +26,6 @@ import {
 } from 'lucide-react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import AddSupplierForm from './AddSupplierForm';
-import AddSupplierOfferForm from './AddSupplierOfferForm';
 
 const initialSuppliers: Supplier[] = [
   {
@@ -72,7 +71,6 @@ export default function SupplierTable({
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 8;
   const [isLoading, setIsLoading] = useState(false);
-  const [isOfferModalOpen, setIsOfferModalOpen] = useState(false);
 
   // Filter suppliers based on search term
   const filteredSuppliers = suppliers.filter(supplier => {
@@ -154,21 +152,14 @@ export default function SupplierTable({
             className="pl-8 transition-all duration-200"
           />
         </div>
-        <div className="flex gap-2">
-          <Button
-            onClick={() => {
-              setSelectedSupplier(null);
-              setIsModalOpen(true);
-            }}
-            className="bg-primary hover:bg-primary/90 text-white">
-            <Plus className="mr-2 h-4 w-4" /> Add Supplier
-          </Button>
-          <Button
-            onClick={() => setIsOfferModalOpen(true)}
-            className="bg-primary hover:bg-primary/90 text-white">
-            <Plus className="mr-2 h-4 w-4" /> Supplier Offers
-          </Button>
-        </div>
+        <Button
+          onClick={() => {
+            setSelectedSupplier(null);
+            setIsModalOpen(true);
+          }}
+          className="bg-primary hover:bg-primary/90 text-white">
+          <Plus className="mr-2 h-4 w-4" /> Add Supplier
+        </Button>
       </div>
 
       <div className="rounded-lg border bg-card shadow-sm overflow-hidden">
@@ -278,15 +269,6 @@ export default function SupplierTable({
             mode={selectedSupplier ? 'update' : 'add'}
             initialData={selectedSupplier}
             onClose={() => setIsModalOpen(false)}
-          />
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={isOfferModalOpen} onOpenChange={setIsOfferModalOpen}>
-        <DialogContent className="max-w-2xl p-0">
-          <AddSupplierOfferForm
-            suppliers={suppliers}
-            onClose={() => setIsOfferModalOpen(false)}
           />
         </DialogContent>
       </Dialog>
