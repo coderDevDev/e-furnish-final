@@ -48,8 +48,15 @@ const OrderCard = ({ order }: OrderCardProps) => {
                 ? 'bg-green-100 text-green-800'
                 : 'bg-yellow-100 text-yellow-800'
             }`}>
-            {order.payment_status.charAt(0).toUpperCase() +
-              order.payment_status.slice(1)}
+            {order.payment_status === 'completed' ? 'Paid' : 'COD'}
+          </span>
+          <span
+            className={`ml-2 inline-block px-2 py-1 rounded text-sm ${
+              order.status === 'delivered'
+                ? 'bg-green-100 text-green-800'
+                : 'bg-yellow-100 text-yellow-800'
+            }`}>
+            {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
           </span>
         </div>
       </div>
