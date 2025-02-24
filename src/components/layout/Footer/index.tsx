@@ -106,14 +106,14 @@ const Footer = () => {
               <Link
                 href="https://github.com/mohammadoftadeh"
                 className="text-black font-medium">
-                Mohammad Oftadeh
+                eFurnish
               </Link>
               {', '}
               Designed by{' '}
               <Link
                 href="https://www.figma.com/@hamzauix"
                 className="text-black font-medium">
-                Hamza Naeem
+                eFurnish
               </Link>
             </p>
             <div className="flex items-center">

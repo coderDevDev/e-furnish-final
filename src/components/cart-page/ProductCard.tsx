@@ -1,136 +1,163 @@
 'use client';
 
 import React from 'react';
-import { PiTrashFill } from 'react-icons/pi';
 import Image from 'next/image';
-import Link from 'next/link';
-import CartCounter from '@/components/ui/CartCounter';
-import { Button } from '../ui/button';
-import {
-  addToCart,
-  CartItem,
-  remove,
-  removeCartItem
-} from '@/lib/features/carts/cartsSlice';
+import { removeCartItem } from '@/lib/features/carts/cartsSlice';
 import { useAppDispatch } from '@/lib/hooks/redux';
+import { ProductCustomization } from '../product-page/Header/CustomizationOptions';
+import { Trash2 } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger
+} from '@/components/ui/alert-dialog';
 
-type ProductCardProps = {
-  data: CartItem;
-};
+interface CartItem {
+  product: {
+    id: number;
+    title: string;
+    srcurl: string;
+    price: number;
+    discount: {
+      percentage: number;
+    };
+  };
+  quantity: number;
+  attributes: string[];
+  customization?: ProductCustomization & {
+    totalCustomizationCost: number;
+  };
+}
 
-const ProductCard = ({ data }: ProductCardProps) => {
+const ProductCard = ({ data }: { data: CartItem }) => {
   const dispatch = useAppDispatch();
 
-  console.log({ data });
+  // Calculate total price including customizations
+  const itemPrice =
+    data.product.price + (data.customization?.totalCustomizationCost || 0);
+  const totalPrice = itemPrice * data.quantity;
+  const discount =
+    (totalPrice * (data.product.discount?.percentage || 0)) / 100;
+  const finalPrice = totalPrice - discount;
+
+  const handleRemoveItem = () => {
+    dispatch(
+      removeCartItem({
+        id: data.product.id.toString(),
+        attributes: data.attributes,
+        customization: data.customization
+      })
+    );
+  };
 
   return (
-    <div className="flex items-start space-x-4">
-      <Link
-        href={`/shop/product/${data.id}/${data.name.split(' ').join('-')}`}
-        className="bg-[#F0EEED] rounded-lg w-full min-w-[100px] max-w-[100px] sm:max-w-[124px] aspect-square overflow-hidden">
-        <Image
-          src={data.srcurl}
-          width={124}
-          height={124}
-          className="rounded-md w-full h-full object-cover hover:scale-110 transition-all duration-500"
-          alt={data.name}
-          priority
-        />
-      </Link>
-      <div className="flex w-full self-stretch flex-col">
-        <div className="flex items-center justify-between">
-          <Link
-            href={`/shop/product/${data.id}/${data.name.split(' ').join('-')}`}
-            className="text-black font-bold text-base xl:text-xl">
-            {data.name}
-          </Link>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-5 w-5 md:h-9 md:w-9"
-            onClick={() =>
-              dispatch(
-                remove({
-                  id: data.id,
-                  attributes: data.attributes,
-                  quantity: data.quantity
-                })
-              )
-            }>
-            <PiTrashFill className="text-xl md:text-2xl text-red-600" />
-          </Button>
-        </div>
-        <div className="-mt-1">
-          <span className="text-black text-xs md:text-sm mr-1">Size:</span>
-          <span className="text-black/60 text-xs md:text-sm">
-            {data.attributes[0]}
-          </span>
-        </div>
-        <div className="mb-auto -mt-1.5">
-          <span className="text-black text-xs md:text-sm mr-1">Color:</span>
-          <span className="text-black/60 text-xs md:text-sm">
-            {data.attributes[1]}
-          </span>
-        </div>
-        <div className="flex items-center flex-wrap justify-between">
-          <div className="flex items-center space-x-[5px] xl:space-x-2.5">
-            {data.discount?.percentage > 0 ? (
-              <span className="font-bold text-black text-xl xl:text-2xl">
-                {`$${Math.round(
-                  data.price - (data.price * data.discount?.percentage) / 100
-                )}`}
-              </span>
-            ) : data.discount.amount > 0 ? (
-              <span className="font-bold text-black text-xl xl:text-2xl">
-                {`$${data.price - data.discount.amount}`}
-              </span>
-            ) : (
-              <span className="font-bold text-black text-xl xl:text-2xl">
-                ${data.price}
-              </span>
-            )}
-            {data.discount.percentage > 0 && (
-              <span className="font-bold text-black/40 line-through text-xl xl:text-2xl">
-                ${data.price}
-              </span>
-            )}
-            {data.discount.amount > 0 && (
-              <span className="font-bold text-black/40 line-through text-xl xl:text-2xl">
-                ${data.price}
-              </span>
-            )}
-            {data.discount.percentage > 0 ? (
-              <span className="font-medium text-[10px] xl:text-xs py-1.5 px-3.5 rounded-full bg-[#FF3333]/10 text-[#FF3333]">
-                {`-${data.discount.percentage}%`}
-              </span>
-            ) : (
-              data.discount.amount > 0 && (
-                <span className="font-medium text-[10px] xl:text-xs py-1.5 px-3.5 rounded-full bg-[#FF3333]/10 text-[#FF3333]">
-                  {`-$${data.discount.amount}`}
-                </span>
-              )
-            )}
-          </div>
-          <CartCounter
-            initialValue={data.quantity}
-            onAdd={() => dispatch(addToCart({ ...data, quantity: 1 }))}
-            onRemove={() =>
-              data.quantity === 1
-                ? dispatch(
-                    remove({
-                      id: data.id,
-                      attributes: data.attributes,
-                      quantity: data.quantity
-                    })
-                  )
-                : dispatch(
-                    removeCartItem({ id: data.id, attributes: data.attributes })
-                  )
-            }
-            isZeroDelete
-            className="px-5 py-3 max-h-8 md:max-h-10 min-w-[105px] max-w-[105px] sm:max-w-32"
+    <div className="flex items-center justify-between py-5">
+      <div className="flex items-center gap-3 sm:gap-5">
+        <div className="relative w-[100px] h-[100px] sm:w-[120px] sm:h-[120px] rounded-xl overflow-hidden">
+          <Image
+            src={data.product.srcurl}
+            alt={data.product.title}
+            fill
+            className="object-cover"
           />
         </div>
+        <div>
+          <h3 className="text-sm sm:text-base font-medium mb-1">
+            {data.product.title}
+          </h3>
+
+          {/* Display customizations */}
+          {data.customization && (
+            <div className="space-y-2 text-sm text-gray-600">
+              {data.customization.material && (
+                <p>Material: {data.customization.material}</p>
+              )}
+              {data.customization.color && (
+                <div className="flex items-center gap-2">
+                  <span>Color: {data.customization.color.name}</span>
+                  <div
+                    className={cn(
+                      data.customization.color.code,
+                      'w-4 h-4 rounded-full ring-1 ring-gray-200'
+                    )}
+                  />
+                </div>
+              )}
+              {data.customization.dimensions && (
+                <p>Size: {data.customization.dimensions.size}cm</p>
+              )}
+              {data.customization.addons.length > 0 && (
+                <div>
+                  <p className="font-medium">Add-ons:</p>
+                  <ul className="ml-4">
+                    {data.customization.addons.map(addon => (
+                      <li key={addon.id} className="flex justify-between">
+                        <span>
+                          {addon.name} ({addon.quantity} {addon.unit}
+                          {addon.quantity > 1 ? 's' : ''})
+                        </span>
+                        <span className="ml-4">
+                          ₱{(addon.price * addon.quantity).toLocaleString()}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
+
+          <div className="flex items-center gap-2 mt-2">
+            <span className="text-sm sm:text-base">
+              ₱{itemPrice.toLocaleString()}
+            </span>
+            {data.product.discount?.percentage > 0 && (
+              <span className="text-[10px] sm:text-xs py-1 px-2 rounded-full bg-[#FF3333]/10 text-[#FF3333]">
+                -{data.product.discount.percentage}%
+              </span>
+            )}
+            <span className="text-sm sm:text-base">×{data.quantity}</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex flex-col items-end gap-2">
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-black/60 hover:text-red-600 transition-colors">
+              <Trash2 className="h-5 w-5" />
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Remove Item from Cart</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to remove "{data.product.title}" from your
+                cart? This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleRemoveItem}
+                className="bg-red-600 hover:bg-red-700">
+                Remove
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+        <span className="font-medium">₱{finalPrice.toLocaleString()}</span>
       </div>
     </div>
   );

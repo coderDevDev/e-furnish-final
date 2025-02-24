@@ -8,14 +8,13 @@ import { RootState } from '@/lib/store';
 import { cn } from '@/lib/utils';
 
 const PhotoSection = ({ data }: { data: Product }) => {
+  console.log({ data });
   const [selected, setSelected] = useState<string>(data.srcurl);
   const { colorSelection } = useAppSelector(
     (state: RootState) => state.products
   );
 
-  // Check if color has been actively selected (not the initial state)
-  const isColorSelected =
-    colorSelection.name !== 'Brown' || colorSelection.hex !== '#4F4631';
+  const isColorSelected = colorSelection?.hex && colorSelection.hex !== '';
 
   return (
     <div className="flex flex-col-reverse lg:flex-row lg:space-x-3.5">
@@ -25,29 +24,21 @@ const PhotoSection = ({ data }: { data: Product }) => {
             <button
               key={index}
               type="button"
-              className="bg-[#F0EEED] rounded-[5px] xl:rounded-[5px] w-full max-w-[111px] xl:max-w-[152px] max-h-[106px] xl:max-h-[167px] xl:min-h-[167px] aspect-square overflow-hidden"
+              className="relative w-[72px] h-[72px] sm:w-[96px] sm:h-[96px] rounded-[13px] sm:rounded-[20px] overflow-hidden"
               onClick={() => setSelected(photo)}>
-              <div
-                className={`relative w-full h-full ${
-                  selected === photo ? 'border-2 border-primary' : ''
-                }`}>
-                <Image
-                  src={photo}
-                  width={152}
-                  height={167}
-                  className="rounded-md w-full h-full object-cover
-               
-                  "
-                  alt={data.title}
-                  priority
+              <Image
+                src={photo}
+                fill
+                className="object-cover"
+                alt={data.title}
+                priority
+              />
+              {/* {isColorSelected && (
+                <div
+                  className="absolute inset-0 mix-blend-multiply"
+                  style={{ backgroundColor: colorSelection.hex }}
                 />
-                {/* {isColorSelected && (
-                  <div
-                    className="absolute inset-0 mix-blend-multiply"
-                    style={{ backgroundColor: colorSelection.hex }}
-                  />
-                )} */}
-              </div>
+              )} */}
             </button>
           ))}
         </div>

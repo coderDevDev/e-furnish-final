@@ -8,11 +8,26 @@ import React from 'react';
 
 const AddToCartBtn = ({ data }: { data: Product & { quantity: number } }) => {
   const dispatch = useAppDispatch();
-  const { sizeSelection, colorSelection } = useAppSelector(
+  const { customization } = useAppSelector(
     (state: RootState) => state.products
   );
 
-  console.log({ data });
+  // Calculate total customization cost
+  const calculateCustomizationCost = () => {
+    if (!customization) return 0;
+
+    // Add costs from addons
+    const addonsCost = customization.addons.reduce(
+      (total, addon) => total + addon.price * addon.quantity,
+      0
+    );
+
+    // Add any other customization costs here
+    const totalCustomizationCost = addonsCost;
+
+    return totalCustomizationCost;
+  };
+
   return (
     <button
       type="button"
@@ -22,11 +37,17 @@ const AddToCartBtn = ({ data }: { data: Product & { quantity: number } }) => {
           addToCart({
             id: data.id,
             name: data.title,
-            srcurl: data.srcurl,
+            srcUrl: data.srcurl,
             price: data.price,
-            attributes: [sizeSelection, colorSelection.name],
+            attributes: [],
             discount: data.discount,
-            quantity: data.quantity
+            quantity: data.quantity,
+            customization: customization
+              ? {
+                  ...customization,
+                  totalCustomizationCost: calculateCustomizationCost()
+                }
+              : undefined
           })
         )
       }>

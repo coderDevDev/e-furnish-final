@@ -1,4 +1,6 @@
-import React from 'react';
+'use client';
+
+import React, { useState } from 'react';
 import PhotoSection from './PhotoSection';
 import { Product } from '@/types/product.types';
 import { integralCF } from '@/styles/fonts';
@@ -7,8 +9,15 @@ import Rating from '@/components/ui/Rating';
 import ColorSelection from './ColorSelection';
 import SizeSelection from './SizeSelection';
 import AddToCardSection from './AddToCardSection';
+import {
+  CustomizationOptions,
+  type ProductCustomization
+} from './CustomizationOptions';
 
 const Header = ({ data }: { data: Product }) => {
+  const [customization, setCustomization] =
+    useState<ProductCustomization | null>(null);
+
   if (!data.discount) {
     data.discount = {}; // Initialize discount object if it's null or undefined
   }
@@ -16,6 +25,14 @@ const Header = ({ data }: { data: Product }) => {
   if (data.discount.percentage == null) {
     data.discount.percentage = 0;
   }
+
+  const handleCustomizationChange = (
+    newCustomization: ProductCustomization
+  ) => {
+    setCustomization(newCustomization);
+    // Calculate new price based on customizations
+    // Update UI accordingly
+  };
 
   return (
     <>
@@ -88,12 +105,16 @@ const Header = ({ data }: { data: Product }) => {
             durable fabric, it offers superior comfort and style, making it a
             great addition to your home decor.
           </p>
-          <hr className="h-[1px] border-t-black/10 mb-5" />
-          <ColorSelection />
+          {/* <hr className="h-[1px] border-t-black/10 mb-5" /> */}
+          {/* <ColorSelection /> */}
           {/* <hr className="h-[1px] border-t-black/10 my-5" /> */}
           {/* <SizeSelection /> */}
           <hr className="hidden md:block h-[1px] border-t-black/10 my-5" />
-          <AddToCardSection data={data} />
+          <CustomizationOptions
+            onCustomizationChange={handleCustomizationChange}
+          />
+          <hr className="hidden md:block h-[1px] border-t-black/10 my-5" />
+          <AddToCardSection data={data} customization={customization} />
         </div>
       </div>
     </>

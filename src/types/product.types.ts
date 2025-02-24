@@ -5,15 +5,13 @@ export type Discount = {
 
 export interface Product {
   id: string;
-  title: string;
-  description: string | null;
+  name: string;
   price: number;
-  stock: number;
-  category: string;
-  srcurl: string;
-  gallery: string[];
-  rating: number | null;
-  sales_count: number;
-  created_at: string;
-  updated_at: string;
+  rating: number;
+  srcUrl: string;
+  discount: {
+    percentage: number;
+    amount: number;
+  };
+  attributes: string[];
 }

@@ -6,7 +6,7 @@ import TopBanner from '@/components/layout/Banner/TopBanner';
 import TopNavbar from '@/components/layout/Navbar/TopNavbar';
 import Footer from '@/components/layout/Footer';
 import HolyLoader from 'holy-loader';
-import Providers from './providers';
+import { Providers } from '@/lib/providers';
 import QueryProvider from '@/providers/QueryProvider';
 import { headers } from 'next/headers';
 import { Toaster } from 'sonner';

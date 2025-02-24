@@ -28,6 +28,17 @@ export interface RegisterData {
   };
 }
 
+interface UserProfile {
+  id: string;
+  full_name: string;
+  phone: string;
+  address: string;
+  city: string;
+  state: string;
+  zip_code: string;
+  updated_at: string;
+}
+
 export const authService = {
   async register(data: RegisterData): Promise<AuthResponse> {
     const { email, password, role, metadata } = data;
@@ -68,5 +79,53 @@ export const authService = {
     }
 
     return authResponse;
+  },
+
+  getCurrentUser: async () => {
+    const {
+      data: { user },
+      error
+    } = await supabase.auth.getUser();
+    if (error) throw error;
+    return user;
+  },
+
+  getUserProfile: async () => {
+    const {
+      data: { user },
+      error: userError
+    } = await supabase.auth.getUser();
+    if (userError) throw userError;
+    if (!user) return null;
+
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', user.id)
+      .single();
+
+    if (profileError) throw profileError;
+
+    return {
+      user,
+      profile
+    };
+  },
+
+  updateUserProfile: async (profileData: Partial<UserProfile>) => {
+    const {
+      data: { user },
+      error: userError
+    } = await supabase.auth.getUser();
+    if (userError) throw userError;
+    if (!user) throw new Error('No user found');
+
+    const { error } = await supabase.from('profiles').upsert({
+      id: user.id,
+      ...profileData,
+      updated_at: new Date().toISOString()
+    });
+
+    if (error) throw error;
   }
 };
