@@ -1,7 +1,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import BreadcrumbShop from '@/components/shop-page/BreadcrumbShop';
+import MobileFilters from '@/components/shop-page/filters/MobileFilters';
+import Filters from '@/components/shop-page/filters';
+import { Input } from '@/components/ui/input';
 import {
   Select,
   SelectContent,
@@ -9,161 +13,136 @@ import {
   SelectTrigger,
   SelectValue
 } from '@/components/ui/select';
-import MobileFilters from '@/components/shop-page/filters/MobileFilters';
-import Filters from '@/components/shop-page/filters';
-import { FiSliders } from 'react-icons/fi';
+import { Loader2 } from 'lucide-react';
 import ProductCard from '@/components/common/ProductCard';
-import {
-  Pagination,
-  PaginationContent,
-  PaginationEllipsis,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious
-} from '@/components/ui/pagination';
-import { productService } from '@/services/productService';
+import { Button } from '@/components/ui/button';
+import { useDebounce } from '@/lib/hooks/useDebounce';
+import { productService } from '@/lib/services/productService';
 import { Product } from '@/types/product.types';
 import { toast } from 'sonner';
 
 export default function ShopPage() {
+  const searchParams = useSearchParams();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [sortBy, setSortBy] = useState('newest');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const debouncedSearch = useDebounce(searchTerm, 500);
+
+  const category = searchParams.get('category');
+  const itemsPerPage = 12;
 
   useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        const data = await productService.getAllProducts();
-        console.log('Products:', data);
-        setProducts(data);
-      } catch (error) {
-        console.error('Error fetching products:', error);
-        setError('Failed to load products');
-        toast.error('Failed to load products');
-      } finally {
-        setLoading(false);
-      }
-    };
+    loadProducts();
+  }, [debouncedSearch, category, sortBy, currentPage]);
 
-    fetchProducts();
-  }, []);
+  const loadProducts = async () => {
+    try {
+      setLoading(true);
+      const { products, total } = await productService.getProducts({
+        category,
+        searchTerm: debouncedSearch,
+        sortBy,
+        page: currentPage,
+        itemsPerPage
+      });
 
-  if (loading) {
-    return (
-      <div className="flex h-[calc(100vh-4rem)] items-center justify-center">
-        <div className="text-lg">Loading products...</div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="flex h-[calc(100vh-4rem)] items-center justify-center">
-        <div className="text-lg text-red-500">{error}</div>
-      </div>
-    );
-  }
-
-  if (!products.length) {
-    return (
-      <div className="flex h-[calc(100vh-4rem)] items-center justify-center">
-        <div className="text-lg">No products found</div>
-      </div>
-    );
-  }
-
-  const totalProducts = products.length;
-  const productsPerPage = 9;
+      setProducts(products);
+      setTotalPages(Math.ceil(total / itemsPerPage));
+    } catch (error) {
+      console.error('Error loading products:', error);
+      toast.error('Failed to load products. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <main className="pb-20">
-      <div className="max-w-frame mx-auto px-4 xl:px-0">
-        <hr className="h-[1px] border-t-black/10 mb-5 sm:mb-6" />
-        <BreadcrumbShop />
-        <div className="flex md:space-x-5 items-start">
-          <div className="hidden md:block min-w-[295px] max-w-[295px] border border-black/10 rounded-[20px] px-5 md:px-6 py-5 space-y-5 md:space-y-6">
-            <div className="flex items-center justify-between">
-              <span className="font-bold text-black text-xl">Filters</span>
-              <FiSliders className="text-2xl text-black/40" />
+    <div className="container py-5 sm:py-9 max-w-[1200px] mx-auto">
+      {/* <BreadcrumbShop /> */}
+      <div className="flex items-center justify-end mb-5 sm:mb-9">
+        <div className="flex items-center space-x-2 mr-2">
+          <Input
+            type="search"
+            placeholder="Search products..."
+            className="w-full"
+            value={searchTerm}
+            onChange={e => setSearchTerm(e.target.value)}
+          />
+          <MobileFilters />
+        </div>
+        <Select value={sortBy} onValueChange={setSortBy}>
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Sort by" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="newest">Newest</SelectItem>
+            <SelectItem value="price-asc">Price: Low to High</SelectItem>
+            <SelectItem value="price-desc">Price: High to Low</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="grid grid-cols-12 gap-5 sm:gap-9">
+        <div className="hidden md:block col-span-3">
+          <Filters />
+        </div>
+        <div className="col-span-12 md:col-span-9">
+          {loading ? (
+            <div className="flex justify-center items-center min-h-[400px]">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
             </div>
-            <Filters />
-          </div>
-          <div className="flex flex-col w-full space-y-5">
-            <div className="flex flex-col lg:flex-row lg:justify-between">
-              <div className="flex items-center justify-between">
-                <h1 className="font-bold text-2xl md:text-[32px]">Casual</h1>
-                <MobileFilters />
+          ) : products.length === 0 ? (
+            <div className="text-center py-12">
+              <h2 className="text-2xl font-semibold mb-4">No Products Found</h2>
+              <p className="text-gray-600">
+                Try adjusting your search or filters to find what you're looking
+                for.
+              </p>
+            </div>
+          ) : (
+            <>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                {products.map(product => (
+                  <ProductCard key={product.id} data={product} />
+                ))}
               </div>
-              <div className="flex flex-col sm:items-center sm:flex-row">
-                <span className="text-sm md:text-base text-black/60 mr-3">
-                  Showing 1-{Math.min(productsPerPage, totalProducts)} of{' '}
-                  {totalProducts} Products
-                </span>
-                <div className="flex items-center">
-                  Sort by:{' '}
-                  <Select defaultValue="most-popular">
-                    <SelectTrigger className="font-medium text-sm px-1.5 sm:text-base w-fit text-black bg-transparent shadow-none border-none">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="most-popular">Most Popular</SelectItem>
-                      <SelectItem value="low-price">Low Price</SelectItem>
-                      <SelectItem value="high-price">High Price</SelectItem>
-                    </SelectContent>
-                  </Select>
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="flex justify-center mt-8 gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}>
+                    Previous
+                  </Button>
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                    page => (
+                      <Button
+                        key={page}
+                        variant={currentPage === page ? 'default' : 'outline'}
+                        onClick={() => setCurrentPage(page)}>
+                        {page}
+                      </Button>
+                    )
+                  )}
+                  <Button
+                    variant="outline"
+                    onClick={() =>
+                      setCurrentPage(p => Math.min(totalPages, p + 1))
+                    }
+                    disabled={currentPage === totalPages}>
+                    Next
+                  </Button>
                 </div>
-              </div>
-            </div>
-            <div className="w-full grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-5">
-              {products.slice(0, productsPerPage).map(product => (
-                <ProductCard key={product.id} data={product} />
-              ))}
-            </div>
-            <hr className="border-t-black/10" />
-            <Pagination className="justify-between">
-              <PaginationPrevious href="#" className="border border-black/10" />
-              <PaginationContent>
-                {/* Calculate total pages */}
-                {Array.from({
-                  length: Math.ceil(totalProducts / productsPerPage)
-                })
-                  .slice(0, 3)
-                  .map((_, index) => (
-                    <PaginationItem key={index}>
-                      <PaginationLink
-                        href="#"
-                        className="text-black/50 font-medium text-sm"
-                        isActive={index === 0}>
-                        {index + 1}
-                      </PaginationLink>
-                    </PaginationItem>
-                  ))}
-                <PaginationItem>
-                  <PaginationEllipsis className="text-black/50 font-medium text-sm" />
-                </PaginationItem>
-                {/* Show last few pages */}
-                {Array.from({
-                  length: Math.ceil(totalProducts / productsPerPage)
-                })
-                  .slice(-3)
-                  .map((_, index) => (
-                    <PaginationItem key={index} className="hidden lg:block">
-                      <PaginationLink
-                        href="#"
-                        className="text-black/50 font-medium text-sm">
-                        {Math.ceil(totalProducts / productsPerPage) - 2 + index}
-                      </PaginationLink>
-                    </PaginationItem>
-                  ))}
-              </PaginationContent>
-              <PaginationNext href="#" className="border border-black/10" />
-            </Pagination>
-          </div>
+              )}
+            </>
+          )}
         </div>
       </div>
-    </main>
+    </div>
   );
 }

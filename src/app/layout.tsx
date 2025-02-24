@@ -15,7 +15,7 @@ import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { LayoutWrapper } from '@/components/layout/LayoutWrapper';
 
 export const metadata: Metadata = {
-  title: 'Shopco',
+  title: 'eFurnish',
   description: 'Your one-stop furniture shop'
 };
 

@@ -55,7 +55,7 @@ const paymentBadgesData: PaymentBadge[] = [
   }
 ];
 
-const Footer = () => {
+const Footer1 = () => {
   return (
     <footer className="mt-10">
       <div className="relative">
@@ -143,4 +143,7 @@ const Footer = () => {
   );
 };
 
+const Footer = () => {
+  return <div></div>;
+};
 export default Footer;

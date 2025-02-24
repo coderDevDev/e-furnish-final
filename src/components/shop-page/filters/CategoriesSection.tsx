@@ -33,6 +33,9 @@ const categoriesData: Category[] = [
 const CategoriesSection = () => {
   return (
     <div className="flex flex-col space-y-0.5 text-black/60">
+      <h3 className="text-primary font-bold text-xl hover:no-underline p-0 py-0.5">
+        Categories
+      </h3>
       {categoriesData.map((category, idx) => (
         <Link
           key={idx}

@@ -17,17 +17,23 @@ import {
 import { FiMenu } from 'react-icons/fi';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { toast } from 'sonner';
+import { ListOrderedIcon } from 'lucide-react';
 
 const sidebarLinks = [
+  // {
+  //   label: 'Dashboard',
+  //   href: '/admin',
+  //   icon: RiDashboardLine
+  // },
+  // {
+  //   label: 'Products',
+  //   href: '/admin/products',
+  //   icon: MdOutlineProductionQuantityLimits
+  // },
   {
-    label: 'Dashboard',
-    href: '/admin',
-    icon: RiDashboardLine
-  },
-  {
-    label: 'Products',
-    href: '/admin/products',
-    icon: MdOutlineProductionQuantityLimits
+    label: 'Orders',
+    href: '/admin/customer-orders',
+    icon: ListOrderedIcon
   },
   {
     label: 'Inventory',

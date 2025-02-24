@@ -51,7 +51,7 @@ export const locationService = {
     await new Promise(resolve => setTimeout(resolve, 100));
 
     try {
-      const regionProvinces = await provincesByCode(regionCode);
+      const regionProvinces = await provinces(regionCode);
       return regionProvinces.map(province => ({
         id: province.province_code,
         name: province.province_name,

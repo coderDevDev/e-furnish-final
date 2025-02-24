@@ -6,8 +6,8 @@ import AdminTemplate from './template';
 import { Toaster } from 'sonner';
 
 export const metadata: Metadata = {
-  title: 'Admin Panel - Shopco',
-  description: 'Admin dashboard for Shopco'
+  title: 'Admin Panel - eFurnish',
+  description: 'Admin dashboard for eFurnish'
 };
 
 async function checkAdminAccess() {

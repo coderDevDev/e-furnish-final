@@ -1,21 +1,21 @@
-"use client";
+'use client';
 
-import React from "react";
-import * as motion from "framer-motion/client";
-import { cn } from "@/lib/utils";
-import { integralCF } from "@/styles/fonts";
+import React from 'react';
+import * as motion from 'framer-motion/client';
+import { cn } from '@/lib/utils';
+import { integralCF } from '@/styles/fonts';
 import {
   Carousel,
   CarouselContent,
   CarouselItem,
   CarouselNext,
   CarouselPrevious,
-  type CarouselApi,
-} from "@/components/ui/carousel";
-import { FaArrowLeft, FaArrowRight } from "react-icons/fa6";
-import { useIsClient, useMediaQuery } from "usehooks-ts";
-import ReviewCard from "@/components/common/ReviewCard";
-import { Review } from "@/types/review.types";
+  type CarouselApi
+} from '@/components/ui/carousel';
+import { FaArrowLeft, FaArrowRight } from 'react-icons/fa6';
+import { useIsClient, useMediaQuery } from 'usehooks-ts';
+import ReviewCard from '@/components/common/ReviewCard';
+import { Review } from '@/types/review.types';
 
 type ReviewsProps = { data: Review[] };
 
@@ -23,7 +23,7 @@ const Reviews = ({ data }: ReviewsProps) => {
   const [api, setApi] = React.useState<CarouselApi>();
   const [current, setCurrent] = React.useState(0);
   const [count, setCount] = React.useState(0);
-  const isDesktop = useMediaQuery("(min-width: 1024px)");
+  const isDesktop = useMediaQuery('(min-width: 1024px)');
   const isClient = useIsClient();
 
   React.useEffect(() => {
@@ -34,7 +34,7 @@ const Reviews = ({ data }: ReviewsProps) => {
     setCount(api.scrollSnapList().length);
     setCurrent(api.selectedScrollSnap() + 1);
 
-    api.on("select", () => {
+    api.on('select', () => {
       setCurrent(api.selectedScrollSnap() + 1);
     });
   }, [api]);
@@ -44,12 +44,11 @@ const Reviews = ({ data }: ReviewsProps) => {
   return (
     <section className="overflow-hidden">
       <motion.div
-        initial={{ x: "100px", opacity: 0 }}
-        whileInView={{ x: "0", opacity: 1 }}
+        initial={{ x: '100px', opacity: 0 }}
+        whileInView={{ x: '0', opacity: 1 }}
         viewport={{ once: true }}
-        transition={{ duration: 0.6 }}
-      >
-        <Carousel
+        transition={{ duration: 0.6 }}>
+        {/* <Carousel
           setApi={setApi}
           opts={{
             align: "center",
@@ -123,7 +122,7 @@ const Reviews = ({ data }: ReviewsProps) => {
               </CarouselItem>
             ))}
           </CarouselContent>
-        </Carousel>
+        </Carousel> */}
       </motion.div>
     </section>
   );

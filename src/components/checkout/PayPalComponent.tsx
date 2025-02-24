@@ -21,7 +21,7 @@ const PayPalComponent = ({ amount, onSuccess }: PayPalComponentProps) => {
     <PayPalScriptProvider
       options={{
         clientId:
-          'AeOyoU1R7DSdegMaH-XLmmcOYywR83M3oMowvQE1-l3es9zbVfifqLodpD44m0uPCEgk3PLXu7DleiHw',
+          'AWJkDQ1PykTsOXG5lHujfmv3oXzVbZF0nHfxVvNHbVL3ny4aK1fPIPO559iigfaG0EtTeIE3muj4AL7D',
         currency: 'PHP'
       }}>
       <div className="w-full py-3">

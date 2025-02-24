@@ -19,7 +19,7 @@ const stats = [
   },
   {
     label: 'Total Revenue',
-    value: '$12,345',
+    value: '₱12,345',
     icon: DollarSign,
     change: '+8%'
   },
