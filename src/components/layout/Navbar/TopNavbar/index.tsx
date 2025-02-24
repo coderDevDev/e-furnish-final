@@ -22,6 +22,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { LogOut, User } from 'lucide-react';
 import { toast } from 'sonner';
+import OrdersBtn from './OrdersBtn';
 
 const data: NavMenu = [
   // {
@@ -114,6 +115,7 @@ const TopNavbar = () => {
               className="max-w-[22px] max-h-[22px]"
             />
           </Link>
+          <OrdersBtn />
           <CartBtn />
           <DropdownMenu>
             <DropdownMenuTrigger className="p-1 outline-none">

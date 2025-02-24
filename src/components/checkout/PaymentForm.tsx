@@ -20,10 +20,16 @@ import {
   HoverCardContent,
   HoverCardTrigger
 } from '@/components/ui/hover-card';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { toast } from 'sonner';
+import { useAppSelector, useAppDispatch } from '@/lib/hooks/redux';
 import { InfoIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import PayPalComponent from './PayPalComponent';
+import { useRouter } from 'next/navigation';
+import { authService } from '@/lib/services/authService';
+import { clearCart } from '@/lib/features/carts/cartsSlice';
+import type { CartItem } from '@/lib/features/carts/cartsSlice';
 
 const formSchema = z.object({
   paymentMethod: z.enum(['cod', 'paypal']),
@@ -39,6 +45,34 @@ interface PaymentFormProps {
 
 export function PaymentForm({ onNext, totalAmount }: PaymentFormProps) {
   const [isProcessing, setIsProcessing] = useState(false);
+  const { cart } = useAppSelector(state => state.carts);
+  const router = useRouter();
+  const dispatch = useAppDispatch();
+
+  const hasItems = cart && cart.items.length > 0;
+  const calculateTotals = () => {
+    if (!hasItems) return { subtotal: 0, discount: 0, total: 0 };
+
+    return cart.items.reduce(
+      (acc, item: CartItem) => {
+        const basePrice = item.product.price * item.quantity;
+        const customizationCost =
+          item.customization?.totalCustomizationCost || 0;
+        const itemTotal = basePrice + customizationCost;
+        const discountAmount =
+          (itemTotal * (item.product.discount?.percentage || 0)) / 100;
+
+        return {
+          subtotal: acc.subtotal + itemTotal,
+          discount: acc.discount + discountAmount,
+          total: acc.total + (itemTotal - discountAmount)
+        };
+      },
+      { subtotal: 0, discount: 0, total: 0 }
+    );
+  };
+
+  const { total } = calculateTotals();
 
   const form = useForm<PaymentFormValues>({
     resolver: zodResolver(formSchema),
@@ -50,23 +84,43 @@ export function PaymentForm({ onNext, totalAmount }: PaymentFormProps) {
   const selectedMethod = form.watch('paymentMethod');
 
   async function onSubmit(values: PaymentFormValues) {
-    try {
-      setIsProcessing(true);
+    if (values.paymentMethod === 'cod') {
+      try {
+        setIsProcessing(true);
 
-      if (values.paymentMethod === 'paypal') {
-        // Handle PayPal payment
-        // This would integrate with your PayPal implementation
-        console.log('Processing PayPal payment...');
-      } else {
-        // Handle COD
-        console.log('Processing COD order...');
+        const userProfile = await authService.getUserProfile();
+        if (!userProfile?.user || !userProfile?.profile) {
+          throw new Error('No user profile found');
+        }
+
+        const orderItems = cart?.items.map(item => ({
+          product_id: item.product.id,
+          quantity: item.quantity,
+          price: item.product.price,
+          customization: item.customization
+        }));
+
+        await authService.createOrder({
+          user_id: userProfile.user.id,
+          items: orderItems,
+          total_amount: total,
+          payment_method: 'cod',
+          payment_status: 'pending',
+          shipping_address: userProfile.profile.address,
+          change_needed: values.changeNeeded
+            ? parseFloat(values.changeNeeded)
+            : undefined
+        });
+
+        dispatch(clearCart());
+        toast.success('Order placed successfully!');
+        onNext();
+      } catch (error) {
+        console.error('Order error:', error);
+        toast.error('Failed to place order. Please try again.');
+      } finally {
+        setIsProcessing(false);
       }
-
-      onNext();
-    } catch (error) {
-      console.error('Payment error:', error);
-    } finally {
-      setIsProcessing(false);
     }
   }
 
@@ -99,7 +153,8 @@ export function PaymentForm({ onNext, totalAmount }: PaymentFormProps) {
                             </HoverCardTrigger>
                             <HoverCardContent>
                               Pay in cash when your order arrives. Please
-                              prepare the exact amount of ₱{totalAmount}
+                              prepare the exact amount of ₱
+                              {total.toLocaleString()}
                             </HoverCardContent>
                           </HoverCard>
                         </div>
@@ -120,8 +175,7 @@ export function PaymentForm({ onNext, totalAmount }: PaymentFormProps) {
                             </HoverCardTrigger>
                             <HoverCardContent>
                               Pay securely using your PayPal account or credit
-                              card. You'll be redirected to PayPal to complete
-                              your payment.
+                              card.
                             </HoverCardContent>
                           </HoverCard>
                         </div>
@@ -134,12 +188,12 @@ export function PaymentForm({ onNext, totalAmount }: PaymentFormProps) {
             )}
           />
 
-          {selectedMethod === 'cod' && (
-            <div className="space-y-4">
+          {selectedMethod === 'cod' ? (
+            <>
               <Alert className="bg-blue-50 text-blue-800 border-blue-200">
                 <AlertDescription>
-                  Please prepare the exact amount of ₱{totalAmount} upon
-                  delivery.
+                  Please prepare the exact amount of ₱{total.toLocaleString()}{' '}
+                  upon delivery.
                 </AlertDescription>
               </Alert>
 
@@ -160,28 +214,26 @@ export function PaymentForm({ onNext, totalAmount }: PaymentFormProps) {
                   </FormItem>
                 )}
               />
+
+              <Button
+                type="submit"
+                className="w-full bg-primary"
+                disabled={isProcessing}>
+                {isProcessing ? (
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    Processing...
+                  </div>
+                ) : (
+                  'Confirm Order'
+                )}
+              </Button>
+            </>
+          ) : (
+            <div className="mt-4">
+              <PayPalComponent amount={total} onSuccess={onNext} />
             </div>
           )}
-
-          <Button
-            type="submit"
-            className={cn(
-              'w-full bg-primary',
-              selectedMethod === 'paypal' &&
-                'bg-[#0070BA] hover:bg-[#003087] text-white'
-            )}
-            disabled={isProcessing}>
-            {isProcessing ? (
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                Processing...
-              </div>
-            ) : selectedMethod === 'paypal' ? (
-              'Proceed to PayPal'
-            ) : (
-              'Confirm Order'
-            )}
-          </Button>
         </form>
       </Form>
     </div>

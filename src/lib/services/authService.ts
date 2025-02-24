@@ -39,6 +39,47 @@ interface UserProfile {
   updated_at: string;
 }
 
+interface OrderItem {
+  product_id: number;
+  quantity: number;
+  price: number;
+  customization?: {
+    dimensions: {
+      size: number;
+    };
+    addons: Array<{
+      id: string;
+      name: string;
+      category: string;
+      unit: string;
+      quantity: number;
+      price: number;
+    }>;
+    totalCustomizationCost: number;
+  };
+}
+
+interface OrderData {
+  user_id: string;
+  items: OrderItem[];
+  total_amount: number;
+  payment_method: 'cod' | 'paypal';
+  payment_status: 'pending' | 'completed';
+  shipping_address: {
+    street: string;
+    region_id: string;
+    region_name: string;
+    province_id: string;
+    province_name: string;
+    city_id: string;
+    city_name: string;
+    barangay_id: string;
+    barangay_name: string;
+    zip_code: string;
+  };
+  change_needed?: number;
+}
+
 export const authService = {
   async register(data: RegisterData): Promise<AuthResponse> {
     const { email, password, role, metadata } = data;
@@ -127,5 +168,102 @@ export const authService = {
     });
 
     if (error) throw error;
+  },
+
+  createOrder: async (orderData: OrderData) => {
+    const {
+      data: { user },
+      error: userError
+    } = await supabase.auth.getUser();
+    if (userError) throw userError;
+    if (!user) throw new Error('No user found');
+
+    // First create the order
+    const { data: order, error: orderError } = await supabase
+      .from('orders')
+      .insert([
+        {
+          user_id: user.id,
+          total_amount: orderData.total_amount,
+          payment_method: orderData.payment_method,
+          payment_status: orderData.payment_status,
+          shipping_address: orderData.shipping_address,
+          change_needed: orderData.change_needed
+        }
+      ])
+      .select()
+      .single();
+
+    if (orderError) throw orderError;
+
+    // Then create order items
+    const orderItems = orderData.items.map(item => ({
+      order_id: order.id,
+      product_id: item.product_id,
+      quantity: item.quantity,
+      price: item.price,
+      customization: item.customization
+    }));
+
+    const { error: itemsError } = await supabase
+      .from('order_items')
+      .insert(orderItems);
+
+    if (itemsError) throw itemsError;
+
+    return order;
+  },
+
+  getUserOrders: async () => {
+    const {
+      data: { user },
+      error: userError
+    } = await supabase.auth.getUser();
+    if (userError) throw userError;
+    if (!user) throw new Error('No user found');
+
+    const { data: orders, error: ordersError } = await supabase
+      .from('orders')
+      .select(
+        `
+        *,
+        items:order_items (
+          *,
+          product:products (*)
+        )
+      `
+      )
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false });
+
+    if (ordersError) throw ordersError;
+    return orders;
+  },
+
+  getOrderDetails: async (orderId: string) => {
+    const {
+      data: { user },
+      error: userError
+    } = await supabase.auth.getUser();
+    if (userError) throw userError;
+    if (!user) throw new Error('No user found');
+
+    const { data: order, error: orderError } = await supabase
+      .from('orders')
+      .select(
+        `
+        *,
+        items:order_items (
+          *,
+          product:products (*)
+        )
+      `
+      )
+      .eq('id', orderId)
+      .eq('user_id', user.id)
+      .single();
+
+    if (orderError) throw orderError;
+    return order;
   }
 };

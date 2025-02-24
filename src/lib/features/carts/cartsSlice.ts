@@ -150,9 +150,14 @@ const cartsSlice = createSlice({
           return total + (itemPrice - discount);
         }, 0);
       }
+    },
+    clearCart: state => {
+      state.cart.items = [];
+      state.totalPrice = 0;
+      state.adjustedTotalPrice = 0;
     }
   }
 });
 
-export const { addToCart, removeCartItem } = cartsSlice.actions;
+export const { addToCart, removeCartItem, clearCart } = cartsSlice.actions;
 export default cartsSlice.reducer;
