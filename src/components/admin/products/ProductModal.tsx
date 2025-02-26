@@ -492,6 +492,8 @@ export default function ProductModal({
                   <option value="Sofas">Sofas</option>
                   <option value="Chairs">Chairs</option>
                   <option value="Tables">Tables</option>
+                  <option value="Bed">Bed</option>
+                  <option value="Cabinet">Cabinet</option>
                 </FormField>
                 {errors.category && (
                   <div className="absolute right-0 top-0 flex h-full items-center pr-3">
