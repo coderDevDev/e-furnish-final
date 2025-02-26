@@ -480,7 +480,7 @@ export default function ProductModal({
           className="flex flex-col">
           {/* Modal Content - Scrollable */}
           <div className="max-h-[calc(100vh-16rem)] overflow-y-auto px-6 py-4 space-y-4">
-            <FormField label="Title" name="title" />
+            <FormField label="Product Name" name="title" />
 
             <div>
               {/* <label className="block text-sm font-medium text-slate-700">

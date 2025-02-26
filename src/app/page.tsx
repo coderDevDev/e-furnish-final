@@ -80,10 +80,10 @@ export default async function Home() {
               viewAllLink="/shop#top-selling"
             />
           </div>
-          <div className="mb-[50px] sm:mb-20">
+          {/* <div className="mb-[50px] sm:mb-20">
             <DressStyle />
-          </div>
-          <Reviews data={reviewsData} />
+          </div> */}
+          {/* <Reviews data={reviewsData} /> */}
         </main>
       </>
     );
