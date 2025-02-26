@@ -35,8 +35,12 @@ const OrderCard = ({ order }: OrderCardProps) => {
     <div className="bg-white rounded-lg shadow p-6">
       <div className="flex justify-between items-start mb-4">
         <div>
-          <h3 className="text-lg font-semibold">Order #{order.id}</h3>
-          <p className="text-gray-600">{order.created_at}</p>
+          {/* <h3 className="text-lg font-semibold">Order #{order.id}</h3> */}
+          <p className="text-gray-600">
+            {new Date(order.created_at).toLocaleString('en-PH', {
+              timeZone: 'Asia/Manila'
+            })}
+          </p>
         </div>
         <div className="text-right">
           <p className="font-semibold">

@@ -7,53 +7,31 @@ import { useAppSelector } from '@/lib/hooks/redux';
 import { useRouter } from 'next/navigation';
 import { TbBasketExclamation } from 'react-icons/tb';
 import Link from 'next/link';
-
-interface CartItem {
-  product: {
-    id: number;
-    title: string;
-    srcurl: string;
-    price: number;
-    discount: {
-      percentage: number;
-    };
-  };
-  quantity: number;
-  attributes: string[];
-  customization?: {
-    dimensions: {
-      size: number;
-    };
-    addons: Array<{
-      id: string;
-      name: string;
-      category: string;
-      unit: string;
-      quantity: number;
-      price: number;
-    }>;
-    totalCustomizationCost: number;
-  };
-}
+import { useEffect } from 'react';
+import { CartItem } from '@/lib/features/carts/cartsSlice';
 
 export default function CartPage() {
-  const { cart } = useAppSelector(state => state.carts);
+  const { items } = useAppSelector(state => state.carts);
   const router = useRouter();
 
-  const hasItems = cart && cart.items.length > 0;
+  const hasItems = items && items.length > 0;
+
+  useEffect(() => {
+    console.log('Cart items:', items);
+  }, [items]);
 
   // Calculate totals
   const calculateTotals = () => {
     if (!hasItems) return { subtotal: 0, discount: 0, total: 0 };
 
-    return cart.items.reduce(
+    return items.reduce(
       (acc, item: CartItem) => {
         // Base price calculation
         const basePrice = item.product.price * item.quantity;
 
         // Add customization cost if any
         const customizationCost =
-          item.customization?.totalCustomizationCost || 0;
+          item.product.customization?.totalCustomizationCost || 0;
 
         // Total item cost
         const itemTotal = basePrice + customizationCost;
@@ -83,7 +61,7 @@ export default function CartPage() {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-10">
               <div className="lg:col-span-2">
                 <div className="bg-white rounded-2xl p-6 divide-y">
-                  {cart.items.map((item: CartItem, index) => (
+                  {items.map((item: CartItem, index) => (
                     <ProductCard
                       key={`${item.product.id}-${index}`}
                       data={item}

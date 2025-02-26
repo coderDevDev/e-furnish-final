@@ -6,7 +6,6 @@ import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-
 import Link from 'next/link';
 
 interface OrderDetailsProps {
@@ -18,6 +17,7 @@ interface OrderDetailsProps {
 export default function OrderDetailsPage({ params }: OrderDetailsProps) {
   const [order, setOrder] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [isExpanded, setIsExpanded] = useState(false);
 
   useEffect(() => {
     loadOrderDetails();
@@ -61,8 +61,12 @@ export default function OrderDetailsPage({ params }: OrderDetailsProps) {
       <div className="mb-8">
         <div className="flex justify-between items-start">
           <div>
-            <h1 className="text-2xl font-bold mb-2">Order #{order.id}</h1>
-            <p className="text-gray-600">{order.created_at}</p>
+            <h1 className="text-2xl font-bold mb-2">Order Details</h1>
+            <p className="text-gray-600">
+              {new Date(order.created_at).toLocaleString('en-PH', {
+                timeZone: 'Asia/Manila'
+              })}
+            </p>
           </div>
           <Badge
             variant={
@@ -75,44 +79,65 @@ export default function OrderDetailsPage({ params }: OrderDetailsProps) {
       </div>
 
       <div className="grid gap-6">
-        {/* Products Section */}
+        {/* Collapsible Order Details Card */}
         <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-lg font-semibold mb-4">Products</h2>
-          <div className="space-y-4">
-            {order.items.map((item: any, index: number) => (
-              <div
-                key={index}
-                className="flex items-start justify-between py-4 border-t first:border-t-0">
-                <div className="flex-1">
-                  <h4 className="font-medium">{item.product.title}</h4>
-                  <p className="text-gray-600">Quantity: {item.quantity}</p>
-                  {item.customization && (
-                    <div className="text-sm text-gray-500 mt-2">
-                      {item.customization.dimensions && (
-                        <p>Size: {item.customization.dimensions.size}cm</p>
-                      )}
-                      {item.customization.addons && (
-                        <div>
-                          <p className="mt-1">Add-ons:</p>
-                          <ul className="list-disc list-inside">
-                            {item.customization.addons.map(
-                              (addon: any, i: number) => (
-                                <li key={i}>
-                                  {addon.name} ({addon.quantity} {addon.unit}
-                                  {addon.quantity > 1 ? 's' : ''})
-                                </li>
-                              )
-                            )}
-                          </ul>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-                <p className="font-medium">₱{item.price.toLocaleString()}</p>
-              </div>
-            ))}
+          <div className="flex justify-between items-center">
+            <h2 className="text-lg font-semibold">Products</h2>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsExpanded(!isExpanded)}>
+              {isExpanded ? 'Hide Details' : 'Show Details'}
+            </Button>
           </div>
+          {isExpanded && (
+            <div className="space-y-4 mt-4">
+              {order.items.map((item: any, index: number) => (
+                <div key={index} className="flex justify-between items-center">
+                  <div>
+                    <h3 className="font-medium">{item.product.title}</h3>
+                    <p className="text-sm text-gray-500">
+                      Quantity: {item.quantity}
+                    </p>
+                    {item.customization && (
+                      <div className="text-sm text-gray-500">
+                        <p>Customization:</p>
+                        <ul className="list-disc list-inside">
+                          {item.customization.material && (
+                            <li>Material: {item.customization.material}</li>
+                          )}
+                          {item.customization.color && (
+                            <li>Color: {item.customization.color.name}</li>
+                          )}
+                          {item.customization.addons.length > 0 && (
+                            <li>
+                              Add-ons:
+                              <ul className="list-disc list-inside ml-4">
+                                {item.customization.addons.map((addon: any) => (
+                                  <li key={addon.id}>{addon.name}</li>
+                                ))}
+                              </ul>
+                            </li>
+                          )}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                  <div className="text-right">
+                    <p className="text-lg font-semibold">
+                      ₱{item.product.price.toLocaleString()}
+                    </p>
+                    {item.customization && (
+                      <p className="text-sm text-gray-500">
+                        Customization Cost: ₱
+                        {item.customization.totalCustomizationCost.toLocaleString()}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Shipping Information */}

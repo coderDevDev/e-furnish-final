@@ -171,6 +171,7 @@ export const authService = {
   },
 
   createOrder: async (orderData: OrderData) => {
+    console.log({ orderData });
     const {
       data: { user },
       error: userError

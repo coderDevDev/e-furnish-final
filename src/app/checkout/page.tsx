@@ -15,11 +15,11 @@ import { toast } from 'sonner';
 export default function CheckoutPage() {
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState(1);
-  const { cart, totalPrice, adjustedTotalPrice } = useAppSelector(
+  const { items, totalPrice, adjustedTotalPrice } = useAppSelector(
     state => state.carts
   );
 
-  if (!cart || cart.items.length === 0) {
+  if (!items || items.length === 0) {
     router.push('/cart');
     return null;
   }
@@ -68,7 +68,7 @@ export default function CheckoutPage() {
 
           <div className="lg:col-span-1">
             <OrderSummary
-              items={cart.items}
+              items={items}
               totalPrice={totalPrice}
               adjustedTotalPrice={adjustedTotalPrice}
             />

@@ -45,19 +45,19 @@ interface PaymentFormProps {
 
 export function PaymentForm({ onNext, totalAmount }: PaymentFormProps) {
   const [isProcessing, setIsProcessing] = useState(false);
-  const { cart } = useAppSelector(state => state.carts);
+  const { items } = useAppSelector(state => state.carts);
   const router = useRouter();
   const dispatch = useAppDispatch();
 
-  const hasItems = cart && cart.items.length > 0;
+  const hasItems = items && items.length > 0;
   const calculateTotals = () => {
     if (!hasItems) return { subtotal: 0, discount: 0, total: 0 };
 
-    return cart.items.reduce(
+    return items.reduce(
       (acc, item: CartItem) => {
         const basePrice = item.product.price * item.quantity;
         const customizationCost =
-          item.customization?.totalCustomizationCost || 0;
+          item.product.customization?.totalCustomizationCost || 0;
         const itemTotal = basePrice + customizationCost;
         const discountAmount =
           (itemTotal * (item.product.discount?.percentage || 0)) / 100;
@@ -93,7 +93,7 @@ export function PaymentForm({ onNext, totalAmount }: PaymentFormProps) {
           throw new Error('No user profile found');
         }
 
-        const orderItems = cart?.items.map(item => ({
+        const orderItems = items.map(item => ({
           product_id: item.product.id,
           quantity: item.quantity,
           price: item.product.price,

@@ -40,6 +40,8 @@ interface CartItem {
 const ProductCard = ({ data }: { data: CartItem }) => {
   const dispatch = useAppDispatch();
 
+  console.log({ data });
+
   // Calculate total price including customizations
   const itemPrice =
     data.product.price + (data.customization?.totalCustomizationCost || 0);
