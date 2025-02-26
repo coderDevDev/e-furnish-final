@@ -68,11 +68,13 @@ const initialSuppliers: Supplier[] = [
 interface InventoryManagementProps {
   products: Product[];
   fetchProducts: () => Promise<void>;
+  role: string;
 }
 
 export default function InventoryManagement({
   products,
-  fetchProducts
+  fetchProducts,
+  role
 }: InventoryManagementProps) {
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const [orders, setOrders] = useState<PurchaseOrder[]>([]);
@@ -237,7 +239,7 @@ export default function InventoryManagement({
 
   const checkStockLevels = useCallback(
     items => {
-      console.log({ items });
+      //console.log({ items });
       items.forEach(item => {
         item.minQuantity = 20;
         item.name = item.title;
@@ -258,7 +260,7 @@ export default function InventoryManagement({
   );
 
   useEffect(() => {
-    console.log({ products });
+    //console.log({ products });
     checkStockLevels(products);
   }, [products, checkStockLevels]);
 
@@ -477,6 +479,12 @@ export default function InventoryManagement({
           <SupplierOfferTable offers={offers} onRefresh={fetchOffers} />
         </TabsContent>
       </Tabs> */}
+
+      {role === 'admin' ? (
+        <p>Admin-specific content here</p>
+      ) : (
+        <p>Supplier-specific content here</p>
+      )}
     </div>
   );
 }

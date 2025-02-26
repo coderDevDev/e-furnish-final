@@ -97,7 +97,7 @@ export const authService = {
       }
     });
 
-    console.log({ authResponse });
+    //console.log({ authResponse });
     if (authResponse.error) throw authResponse.error;
 
     // Only create profile if user was created successfully
@@ -171,7 +171,7 @@ export const authService = {
   },
 
   createOrder: async (orderData: OrderData) => {
-    console.log({ orderData });
+    //console.log({ orderData });
     const {
       data: { user },
       error: userError

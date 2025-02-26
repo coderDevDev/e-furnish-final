@@ -327,7 +327,7 @@ export default function AddSupplierOfferForm({
               </Label>
               <Select
                 onValueChange={value => {
-                  console.log('Selected supplier:', value);
+                  //console.log('Selected supplier:', value);
                   if (value && typeof value === 'string') {
                     form.setValue('supplier_id', value, {
                       shouldValidate: true

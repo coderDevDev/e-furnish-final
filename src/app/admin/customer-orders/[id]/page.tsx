@@ -114,7 +114,7 @@ export default function OrderDetailsPage({
     );
   }
 
-  console.log({ order });
+  //console.log({ order });
   if (!order) {
     return <div>Order not found</div>;
   }

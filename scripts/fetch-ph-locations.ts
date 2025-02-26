@@ -14,7 +14,7 @@ async function fetchAndSave(url: string, outputPath: string) {
     fs.mkdirSync(path.dirname(outputPath), { recursive: true });
     fs.writeFileSync(outputPath, JSON.stringify(data, null, 2));
 
-    console.log(`Saved: ${outputPath}`);
+    //console.log(`Saved: ${outputPath}`);
   } catch (error) {
     console.error(`Error processing ${url}:`, error);
   }
@@ -63,7 +63,7 @@ async function main() {
       }
     }
 
-    console.log('Successfully fetched all location data');
+    //console.log('Successfully fetched all location data');
   } catch (error) {
     console.error('Error in main:', error);
     process.exit(1);

@@ -30,7 +30,7 @@ async function checkAdminAccess() {
       .eq('id', session.user.id)
       .single();
 
-    return profile?.role === 'admin';
+    return profile?.role === 'admin' || profile?.role === 'supplier';
   } catch (error) {
     console.error('Error checking admin access:', error);
     return false;

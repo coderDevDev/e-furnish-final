@@ -11,7 +11,7 @@ export class ProductService {
 
       if (error) throw error;
 
-      console.log('Fetched products:', data);
+      //console.log('Fetched products:', data);
       return data || [];
     } catch (error) {
       console.error('Error fetching products:', error);

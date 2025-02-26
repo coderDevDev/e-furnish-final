@@ -29,7 +29,7 @@ export default function ProductsPage() {
       setIsLoading(true);
       const data = await productService.getAllProducts();
 
-      console.log({ data });
+      //console.log({ data });
       setProducts(data);
     } catch (error) {
       toast.error('Failed to fetch products');

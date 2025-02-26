@@ -85,12 +85,12 @@ export default function AddSupplierOrderForm({
 
   // Update handlers
   const handleSupplierChange = (value: string) => {
-    console.log('Supplier selected:', value);
+    //console.log('Supplier selected:', value);
     setValue('supplier_id', value);
   };
 
   const handleProductChange = (value: string) => {
-    console.log('Product selected:', value);
+    //console.log('Product selected:', value);
     setValue('product_id', value);
   };
 
@@ -119,7 +119,7 @@ export default function AddSupplierOrderForm({
     }
   };
 
-  console.log({ errors });
+  //console.log({ errors });
   return (
     <div className="relative flex max-h-[90vh] w-full flex-col overflow-hidden rounded-xl bg-white shadow-lg">
       {/* Modal Header */}

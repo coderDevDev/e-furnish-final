@@ -39,7 +39,7 @@ export const locationService = {
     // Call getRegions() as a function to get the array
     const regionList = await getRegions();
 
-    console.log({ regionList });
+    //console.log({ regionList });
     return regionList.map(region => ({
       id: region.region_code,
       name: region.region_name,

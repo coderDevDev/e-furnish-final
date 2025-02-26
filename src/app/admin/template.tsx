@@ -3,7 +3,7 @@
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   RiDashboardLine,
   RiSettings4Line,
@@ -19,17 +19,7 @@ import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { toast } from 'sonner';
 import { ListOrderedIcon } from 'lucide-react';
 
-const sidebarLinks = [
-  // {
-  //   label: 'Dashboard',
-  //   href: '/admin',
-  //   icon: RiDashboardLine
-  // },
-  // {
-  //   label: 'Products',
-  //   href: '/admin/products',
-  //   icon: MdOutlineProductionQuantityLimits
-  // },
+const adminLinks = [
   {
     label: 'Orders',
     href: '/admin/customer-orders',
@@ -40,7 +30,6 @@ const sidebarLinks = [
     href: '/admin/inventory-supplier',
     icon: MdInventory2
   },
-
   {
     label: 'Users',
     href: '/admin/users',
@@ -53,6 +42,14 @@ const sidebarLinks = [
   }
 ];
 
+const supplierLinks = [
+  {
+    label: 'Supplier Offers',
+    href: '/admin/inventory-supplier',
+    icon: MdInventory2
+  }
+];
+
 export default function AdminTemplate({
   children
 }: {
@@ -60,8 +57,42 @@ export default function AdminTemplate({
 }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
+  const [role, setRole] = useState<string | null>(null);
   const pathname = usePathname();
   const supabase = createClientComponentClient();
+
+  useEffect(() => {
+    const fetchUserRole = async () => {
+      try {
+        const {
+          data: { session }
+        } = await supabase.auth.getSession();
+
+        if (!session) {
+          throw new Error('No session found');
+        }
+
+        const { data: profile, error } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', session.user.id)
+          .single();
+
+        if (error) {
+          throw error;
+        }
+
+        setRole(profile.role);
+      } catch (error) {
+        console.error('Error fetching user role:', error);
+        toast.error('Failed to fetch user role');
+      }
+    };
+
+    fetchUserRole();
+  }, [supabase]);
+
+  const links = role === 'admin' ? adminLinks : supplierLinks;
 
   const handleLogout = async () => {
     try {
@@ -93,17 +124,12 @@ export default function AdminTemplate({
                 Admin
               </span>
             )}
-            {/* <button
-              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-              className="rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600">
-              <FiMenu size={20} />
-            </button> */}
           </div>
 
           {/* Sidebar Links */}
           <div className="flex-1 overflow-y-auto p-4">
             <nav className="space-y-2">
-              {sidebarLinks.map(link => (
+              {links.map(link => (
                 <Link
                   key={link.href}
                   href={link.href}
@@ -121,36 +147,16 @@ export default function AdminTemplate({
           </div>
 
           {/* User Info and Logout */}
-          <div className="border-t border-slate-100 p-4">
-            <div className="flex items-center space-x-3">
-              <div className="h-10 w-10 rounded-full bg-primary/10" />
-              {isSidebarOpen && (
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-slate-900">
-                    Admin User
-                  </p>
-                  <p className="text-xs text-slate-500">admin@example.com</p>
-                </div>
-              )}
-            </div>
+          <div className="p-4">
             <button
               onClick={handleLogout}
-              disabled={isLoading}
-              className={cn(
-                'mt-4 flex w-full items-center space-x-3 rounded-xl px-4 py-2.5 text-slate-600 transition-colors',
-                'hover:bg-red-50 hover:text-red-600',
-                isLoading && 'opacity-50 cursor-not-allowed'
-              )}>
+              className="flex items-center space-x-3 rounded-xl px-4 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900">
               <RiLogoutBoxLine size={20} />
-              {isSidebarOpen && (
-                <span>{isLoading ? 'Logging out...' : 'Logout'}</span>
-              )}
+              {isSidebarOpen && <span>Logout</span>}
             </button>
           </div>
         </div>
       </aside>
-
-      {/* Main Content */}
       <main
         className={cn(
           'flex-1 overflow-x-hidden transition-all duration-300',

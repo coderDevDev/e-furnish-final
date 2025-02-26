@@ -9,7 +9,7 @@ type ProductCardProps = {
 };
 
 const ProductCard = ({ data }: ProductCardProps) => {
-  console.log({ data });
+  //console.log({ data });
 
   if (!data.discount) {
     data.discount = {}; // Initialize discount object if it's null or undefined

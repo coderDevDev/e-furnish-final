@@ -15,7 +15,7 @@ export default async function Home() {
     const newArrivals = await productService.getNewArrivals();
     const topSelling = await productService.getTopSelling();
 
-    console.log({ newArrivals });
+    //console.log({ newArrivals });
     return (
       <>
         <Header />

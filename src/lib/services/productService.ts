@@ -40,7 +40,7 @@ class ProductService {
   }
 
   async getProductsByCategory(category: string): Promise<Product[]> {
-    console.log('Dexxx cat');
+    //console.log('Dexxx cat');
     const { data, error } = await supabase
       .from('products')
       .select('*')
@@ -91,7 +91,7 @@ class ProductService {
     productData: Partial<Product>
   ): Promise<Product> {
     try {
-      console.log('Updating product:', { id, productData });
+      //console.log('Updating product:', { id, productData });
 
       const { data, error } = await supabase
         .from('products')
@@ -167,7 +167,7 @@ class ProductService {
     try {
       let query = supabase.from('products').select('*', { count: 'exact' });
 
-      console.log('by category', category);
+      //console.log('by category', category);
       // Apply category filter
       if (category) {
         query = query.ilike('category', `%${category}%`);

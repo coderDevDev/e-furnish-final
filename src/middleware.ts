@@ -23,9 +23,11 @@ export async function middleware(request: NextRequest) {
       .eq('id', session.user.id)
       .single();
 
-    if (!profile || profile.role !== 'admin') {
-      return NextResponse.redirect(new URL('/', request.url));
-    }
+    console.log({ profile: profile.role });
+
+    // if (!profile || profile.role !== 'admin' || profile.role !== 'supplier') {
+    //   return NextResponse.redirect(new URL('/', request.url));
+    // }
   }
 
   return res;

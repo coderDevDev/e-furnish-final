@@ -10,7 +10,7 @@ export default async function ProductPage({
 }: {
   params: { slug: string[] };
 }) {
-  console.log({ params });
+  //console.log({ params });
   try {
     // Fetch the specific product
     const productData = await productService.getProduct(params.slug[0]);

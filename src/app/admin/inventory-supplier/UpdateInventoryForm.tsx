@@ -82,7 +82,7 @@ export default function UpdateInventoryForm({
     initialData?.expirationDate ? new Date(initialData.expirationDate) : null
   );
 
-  console.log({ onAdd });
+  //console.log({ onAdd });
   const {
     register,
     handleSubmit,

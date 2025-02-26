@@ -8,7 +8,7 @@ import { RootState } from '@/lib/store';
 import { cn } from '@/lib/utils';
 
 const PhotoSection = ({ data }: { data: Product }) => {
-  console.log({ data });
+  //console.log({ data });
   const [selected, setSelected] = useState<string>(data.srcurl);
   const { colorSelection } = useAppSelector(
     (state: RootState) => state.products

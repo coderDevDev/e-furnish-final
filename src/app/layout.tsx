@@ -39,7 +39,7 @@ async function checkAdminAccess() {
       .eq('id', session.user.id)
       .single();
 
-    return profile?.role === 'admin';
+    return profile?.role === 'admin' || profile?.role === 'supplier';
   } catch (error) {
     console.error('Error checking admin access:', error);
     return false;
@@ -59,12 +59,13 @@ export default async function RootLayout({
     requestUrl.startsWith('/login') || requestUrl.startsWith('/register');
   const useMinimalLayout = isAdmin || isAuthRoute;
 
-  console.log('RootLayout:', {
-    requestUrl,
-    isAdmin,
-    useMinimalLayout,
-    headers: Object.fromEntries(headersList.entries())
-  });
+  console.log({ isAdmin });
+  //console.log('RootLayout:', {
+  //   requestUrl,
+  //   isAdmin,
+  //   useMinimalLayout,
+  //   headers: Object.fromEntries(headersList.entries())
+  // });
 
   if (useMinimalLayout) {
     return (

@@ -46,7 +46,7 @@ class CustomerOrderService {
         throw error;
       }
 
-      console.log('Orders data:', orders);
+      //console.log('Orders data:', orders);
 
       const stats = orders?.reduce(
         (acc, order) => {
@@ -134,7 +134,7 @@ class CustomerOrderService {
         throw error;
       }
 
-      console.log('Orders fetched:', data);
+      //console.log('Orders fetched:', data);
 
       return data || [];
     } catch (error) {
@@ -190,7 +190,7 @@ class CustomerOrderService {
         throw error;
       }
 
-      console.log('Order details:', data);
+      //console.log('Order details:', data);
 
       return data;
     } catch (error) {

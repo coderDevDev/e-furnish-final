@@ -17,7 +17,7 @@ export default function CartPage() {
   const hasItems = items && items.length > 0;
 
   useEffect(() => {
-    console.log('Cart items:', items);
+    //console.log('Cart items:', items);
   }, [items]);
 
   // Calculate totals

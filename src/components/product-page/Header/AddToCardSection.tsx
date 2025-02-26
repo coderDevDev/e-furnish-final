@@ -193,14 +193,14 @@ const AddToCardSection = ({
 
   return (
     <div className="space-y-4">
-      {items.length > 0 && (
+      {/* {items.length > 0 && (
         <Button
           onClick={handleClearCart}
           variant="outline"
           className="w-full border-red-500 text-red-500 hover:bg-red-50">
           Clear Cart ({items.length} items)
         </Button>
-      )}
+      )} */}
 
       <Button
         onClick={handleDirectAddToCart}

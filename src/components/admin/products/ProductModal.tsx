@@ -232,7 +232,7 @@ export default function ProductModal({
         throw new Error('You must be logged in to upload images');
       }
 
-      console.log({ file });
+      //console.log({ file });
       // Validate file size (e.g., 5MB limit)
       // const MAX_SIZE = 5 * 1024 * 1024; // 5MB
       // if (file.size > MAX_SIZE) {
