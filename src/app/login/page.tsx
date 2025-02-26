@@ -34,7 +34,13 @@ export default function LoginPage() {
 
       if (error) throw error;
 
-      if (data.session) {
+      let isUser = data.user.identities[0].identity_data.role === 'user';
+      if (data.session && isUser) {
+        toast.success('Logged in successfully');
+        window.location.href = '/';
+      }
+
+      if (data.session && !isUser) {
         toast.success('Logged in successfully');
         window.location.href = '/admin';
       }
