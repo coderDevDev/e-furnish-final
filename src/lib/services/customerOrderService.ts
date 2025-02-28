@@ -148,16 +148,95 @@ class CustomerOrderService {
     status: string,
     reason?: string
   ): Promise<void> {
-    const { error } = await supabase
-      .from('orders')
-      .update({
-        status,
-        status_reason: reason,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', orderId);
+    try {
+      // First get the order details before updating
+      const { data: orderDetails } = await supabase
+        .from('orders')
+        .select(
+          `
+          *,
+          profiles!orders_user_id_fkey (
+            full_name,
+            email,
+            phone
+          ),
+          order_items (
+            id,
+            quantity,
+            customization,
+            products!order_items_product_id_fkey (
+              id,
+              title,
+              price,
+              srcurl
+            )
+          )
+        `
+        )
+        .eq('id', orderId)
+        .single();
 
-    if (error) throw error;
+      // Update the order status (keeping original functionality)
+      const { error } = await supabase
+        .from('orders')
+        .update({
+          status,
+          status_reason: reason,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', orderId);
+
+      if (error) throw error;
+
+      // After successful update, send email notification
+      if (orderDetails) {
+        // Prepare email data
+        const emailData = {
+          order: {
+            id: orderDetails.id,
+            total_amount: orderDetails.total_amount,
+            status,
+            status_reason: reason,
+            payment_method: orderDetails.payment_method,
+            payment_status: orderDetails.payment_status,
+            created_at: orderDetails.created_at,
+            shipping_address: orderDetails.shipping_address
+          },
+          userProfile: orderDetails.profiles,
+          orderSummary: orderDetails.order_items.map(item => ({
+            id: item.id,
+            name: item.products.title,
+            quantity: item.quantity,
+            price: item.products.price,
+            image: item.products.srcUrl,
+            customization: item.customization
+          })),
+          status,
+          statusUpdateDate: new Date().toISOString()
+        };
+
+        // Send status update email
+        try {
+          const response = await fetch('/api/send-order-status-update', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(emailData)
+          });
+
+          if (!response.ok) {
+            console.error('Failed to send order status update email');
+          }
+        } catch (emailError) {
+          // Log email error but don't throw it to maintain original functionality
+          console.error('Error sending status update email:', emailError);
+        }
+      }
+    } catch (error) {
+      console.error('Error updating order status:', error);
+      throw error; // Maintain original error handling
+    }
   }
 
   async getOrderDetails(orderId: string): Promise<OrderSummary> {
@@ -190,7 +269,7 @@ class CustomerOrderService {
         throw error;
       }
 
-      //console.log('Order details:', data);
+      console.log('Order details:', data);
 
       return data;
     } catch (error) {

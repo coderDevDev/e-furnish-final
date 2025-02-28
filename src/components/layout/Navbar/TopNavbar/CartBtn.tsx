@@ -9,7 +9,10 @@ const CartBtn = () => {
   const { items } = useAppSelector(state => state.carts);
 
   // Calculate total items in the cart
-  const totalItems = items.reduce((acc, item) => acc + item.quantity, 0);
+  const totalItems = (items || []).reduce(
+    (acc, item) => acc + item.quantity,
+    0
+  );
 
   return (
     <Link href="/cart" className="relative mr-2">

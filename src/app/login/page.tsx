@@ -6,6 +6,7 @@ import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { RoleSelector } from '@/components/auth/RoleSelector';
 import { useSearchParams } from 'next/navigation';
+import { useDebounce } from '@/lib/hooks/useDebounce';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -16,6 +17,10 @@ export default function LoginPage() {
   const searchParams = useSearchParams();
   const message = searchParams.get('message');
 
+  // Debounce the email and password to prevent rapid API calls
+  const debouncedEmail = useDebounce(email, 500);
+  const debouncedPassword = useDebounce(password, 500);
+
   useEffect(() => {
     if (message) {
       toast.success(message);
@@ -24,29 +29,36 @@ export default function LoginPage() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (loading) return; // Prevent multiple submissions
+
     setLoading(true);
 
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password
+        email: debouncedEmail,
+        password: debouncedPassword
       });
 
-      if (error) throw error;
-
-      let isUser = data.user.identities[0].identity_data.role === 'user';
-      if (data.session && isUser) {
-        toast.success('Logged in successfully');
-        window.location.href = '/';
+      if (error) {
+        if (error.message === 'Request rate limit reached') {
+          toast.error('Too many login attempts. Please try again in a moment.');
+        } else {
+          toast.error(error.message);
+        }
+        return;
       }
 
-      if (data.session && !isUser) {
+      const isUser = email !== 'admin@gmail.com';
+
+      console.log({ isUser });
+
+      if (data.session) {
         toast.success('Logged in successfully');
-        window.location.href = '/admin';
+        window.location.href = isUser ? '/' : '/admin';
       }
     } catch (error) {
       console.error('Login error:', error);
-      toast.error(error instanceof Error ? error.message : 'Failed to sign in');
+      toast.error('An unexpected error occurred. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -88,6 +100,7 @@ export default function LoginPage() {
                 onChange={e => setEmail(e.target.value)}
                 className="mt-1 w-full rounded-xl border border-slate-200 px-4 py-2 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                 placeholder="Enter your email"
+                disabled={loading}
                 required
               />
             </div>
@@ -105,6 +118,7 @@ export default function LoginPage() {
                 onChange={e => setPassword(e.target.value)}
                 className="mt-1 w-full rounded-xl border border-slate-200 px-4 py-2 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                 placeholder="Enter your password"
+                disabled={loading}
                 required
               />
             </div>

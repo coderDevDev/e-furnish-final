@@ -2,37 +2,63 @@ import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
+// Define public routes that don't need auth
+const publicRoutes = ['/login', '/register', '/', '/shop'];
+
 export async function middleware(request: NextRequest) {
+  // Skip middleware for public routes and static files
+  if (
+    publicRoutes.some(route => request.nextUrl.pathname.startsWith(route)) ||
+    request.nextUrl.pathname.match(/\.(ico|png|jpg|jpeg|gif|svg)$/)
+  ) {
+    return NextResponse.next();
+  }
+
   const res = NextResponse.next();
   const supabase = createMiddlewareClient({ req: request, res });
 
-  const {
-    data: { session }
-  } = await supabase.auth.getSession();
+  try {
+    // Get session from Supabase (this uses cached session when available)
+    const {
+      data: { session }
+    } = await supabase.auth.getSession();
 
-  // If accessing admin routes, verify admin role
-  if (request.nextUrl.pathname.startsWith('/admin')) {
+    // Redirect to login if no session
     if (!session) {
       return NextResponse.redirect(new URL('/login', request.url));
     }
 
-    // Check if user has admin role
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', session.user.id)
-      .single();
+    // Only check role for admin routes
+    if (request.nextUrl.pathname.startsWith('/admin')) {
+      // Get user profile with role (this can be cached)
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', session.user.id)
+        .single();
 
-    console.log({ profile: profile.role });
+      if (error || !profile || !['admin', 'supplier'].includes(profile.role)) {
+        return NextResponse.redirect(new URL('/', request.url));
+      }
+    }
 
-    // if (!profile || profile.role !== 'admin' || profile.role !== 'supplier') {
-    //   return NextResponse.redirect(new URL('/', request.url));
-    // }
+    return res;
+  } catch (error) {
+    // On error, redirect to login
+    return NextResponse.redirect(new URL('/login', request.url));
   }
-
-  return res;
 }
 
+// Only run middleware for relevant routes
 export const config = {
-  matcher: ['/admin/:path*']
+  matcher: [
+    /*
+     * Match all request paths except:
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     * - public folder
+     */
+    '/((?!_next/static|_next/image|favicon.ico|public/).*)'
+  ]
 };
