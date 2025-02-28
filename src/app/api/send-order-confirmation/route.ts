@@ -24,8 +24,8 @@ export async function POST(request: Request) {
 
     // Send email
     const info = await transporter.sendMail({
-      from: 'E-Furnish Store',
-      to: 'dextermiranda441@gmail.com',
+      from: '"E-Furnish Store" <efurnishstore@gmail.com>',
+      to: userProfile.email,
       subject: `Order Confirmation #${order.id}`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
