@@ -7,7 +7,6 @@ import { useAppSelector } from '@/lib/hooks/redux';
 import { useRouter } from 'next/navigation';
 import { TbBasketExclamation } from 'react-icons/tb';
 import Link from 'next/link';
-import { useEffect } from 'react';
 import { CartItem } from '@/lib/features/carts/cartsSlice';
 
 export default function CartPage() {
@@ -16,22 +15,22 @@ export default function CartPage() {
 
   const hasItems = items && items.length > 0;
 
-  useEffect(() => {
-    //console.log('Cart items:', items);
-  }, [items]);
-
-  // Calculate totals
+  // Calculate totals only for selected items
   const calculateTotals = () => {
     if (!hasItems) return { subtotal: 0, discount: 0, total: 0 };
 
     return items.reduce(
       (acc, item: CartItem) => {
+        // Skip unselected items
+        if (!item.selected) return acc;
+
         // Base price calculation
         const basePrice = item.product.price * item.quantity;
 
         // Add customization cost if any
         const customizationCost =
-          item.product.customization?.totalCustomizationCost || 0;
+          (item.product.customization?.totalCustomizationCost || 0) *
+          item.quantity;
 
         // Total item cost
         const itemTotal = basePrice + customizationCost;
@@ -52,19 +51,23 @@ export default function CartPage() {
 
   const { subtotal, discount, total } = calculateTotals();
 
+  // Check if any items are selected
+  const hasSelectedItems = items.some(item => item.selected);
+
   return (
     <main className="container py-10">
-      <div className="max-w-[1156px] mx-auto">
+      <div className="max-w-[1156px] mx-auto h-full">
         <BreadcrumbCart />
         {hasItems ? (
           <>
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-10">
               <div className="lg:col-span-2">
-                <div className="bg-white rounded-2xl p-6 divide-y">
-                  {items.map((item: CartItem, index) => (
+                <div className="">
+                  {items.map((item, index) => (
                     <ProductCard
                       key={`${item.product.id}-${index}`}
                       data={item}
+                      index={index}
                     />
                   ))}
                 </div>
@@ -91,8 +94,11 @@ export default function CartPage() {
                     </div>
                     <Button
                       onClick={() => router.push('/checkout')}
-                      className="text-sm md:text-base font-medium bg-black rounded-full w-full py-4 h-[54px] md:h-[60px] group bg-primary">
-                      Proceed to Checkout
+                      disabled={!hasSelectedItems}
+                      className="text-sm md:text-base font-medium bg-black rounded-full w-full py-4 h-[54px] md:h-[60px] group bg-primary disabled:opacity-50">
+                      {hasSelectedItems
+                        ? 'Proceed to Checkout'
+                        : 'Select items to checkout'}
                     </Button>
                   </div>
                 </div>

@@ -31,6 +31,7 @@ export async function POST(request: Request) {
 
     const statusMessage = getStatusMessage(status);
 
+    console.log({ userProfile: userProfile.email });
     const info = await transporter.sendMail({
       from: '"E-Furnish Store" <efurnishstore@gmail.com>',
       to: userProfile.email,

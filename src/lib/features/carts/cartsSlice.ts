@@ -5,9 +5,12 @@ import { ProductCustomization } from '@/components/product-page/Header/Customiza
 export interface CartItem {
   product: CartProduct;
   quantity: number;
+  selected?: boolean;
 }
 
 export interface CartProduct extends Product {
+  images: string[];
+  stock: number;
   customization?: ProductCustomization & {
     totalCustomizationCost: number;
     isDownpayment?: boolean;
@@ -25,66 +28,61 @@ const initialState: CartState = {
   total: 0
 };
 
-const calculateTotal = (items: CartItem[]): number => {
-  return items.reduce((acc, item) => {
-    const basePrice = item.product.price * item.quantity;
-    const customizationCost =
-      item.product.customization?.totalCustomizationCost || 0;
-    return acc + basePrice + customizationCost * item.quantity;
-  }, 0);
+const calculateTotal = (items: CartItem[]) => {
+  return items
+    .filter(item => item.selected)
+    .reduce((total, item) => {
+      const basePrice = item.product.price * item.quantity;
+      const customizationCost =
+        (item.product.customization?.totalCustomizationCost || 0) *
+        item.quantity;
+      const itemTotal = basePrice + customizationCost;
+      const discount =
+        (itemTotal * (item.product.discount?.percentage || 0)) / 100;
+      return total + (itemTotal - discount);
+    }, 0);
 };
 
-const cartsSlice = createSlice({
+export const cartsSlice = createSlice({
   name: 'carts',
   initialState,
   reducers: {
     addToCart: (state, action: PayloadAction<CartItem>) => {
-      const newItem = action.payload;
+      const newItem = { ...action.payload, selected: true };
       state.items.push(newItem);
       state.total = calculateTotal(state.items);
     },
-
-    removeCartItem: (
+    removeCartItem: (state, action: PayloadAction<number>) => {
+      state.items = state.items.filter((_, index) => index !== action.payload);
+      state.total = calculateTotal(state.items);
+    },
+    updateQuantity: (
       state,
-      action: PayloadAction<{
-        id: string;
-        attributes: string[];
-        customization?: ProductCustomization & {
-          totalCustomizationCost: number;
-        };
-      }>
+      action: PayloadAction<{ index: number; quantity: number }>
     ) => {
-      if (!state.items) return;
-
-      const { id, attributes, customization } = action.payload;
-
-      // Find the exact item to remove by matching product.id instead of id
-      const itemIndex = state.items.findIndex(
-        item =>
-          item.product.id.toString() === id &&
-          JSON.stringify(item.attributes) === JSON.stringify(attributes) &&
-          JSON.stringify(item.customization) === JSON.stringify(customization)
-      );
-
-      if (itemIndex > -1) {
-        // Get the item to be removed
-        const removedItem = state.items[itemIndex];
-
-        // Update total quantities
-        state.total -= removedItem.quantity;
-
-        // Remove the item
-        state.items = state.items.filter((_, index) => index !== itemIndex);
-
-        // Recalculate totals
+      const { index, quantity } = action.payload;
+      if (state.items[index]) {
+        state.items[index].quantity = Math.max(1, quantity);
         state.total = calculateTotal(state.items);
       }
     },
-    clearCart: state => {
-      return initialState; // This ensures a complete state reset
-    }
+    toggleItemSelection: (state, action: PayloadAction<number>) => {
+      const index = action.payload;
+      if (state.items[index]) {
+        state.items[index].selected = !state.items[index].selected;
+        state.total = calculateTotal(state.items);
+      }
+    },
+    clearCart: () => initialState
   }
 });
 
-export const { addToCart, removeCartItem, clearCart } = cartsSlice.actions;
+export const {
+  addToCart,
+  removeCartItem,
+  updateQuantity,
+  toggleItemSelection,
+  clearCart
+} = cartsSlice.actions;
+
 export default cartsSlice.reducer;

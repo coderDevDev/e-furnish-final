@@ -26,11 +26,14 @@ async function checkAdminAccess() {
     // Check if user has admin role
     const { data: profile } = await supabase
       .from('profiles')
-      .select('role')
+      .select('*')
       .eq('id', session.user.id)
       .single();
 
-    return profile?.role === 'admin' || profile?.role === 'supplier';
+    console.log({ profile });
+    let adminEmails = ['admin@gmail.com', 'efurnish.03@gmail.com'];
+
+    return adminEmails.includes(profile?.email || '');
   } catch (error) {
     console.error('Error checking admin access:', error);
     return false;
