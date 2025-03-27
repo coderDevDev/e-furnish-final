@@ -42,7 +42,7 @@ async function checkAdminAccess() {
     let adminEmails = ['admin@gmail.com', 'efurnish.03@gmail.com'];
 
     console.log({ profile });
-    return adminEmails.includes(profile?.email || '');
+    return ['admin', 'supplier'].includes(profile?.role || '');
   } catch (error) {
     console.error('Error checking admin access:', error);
     return false;

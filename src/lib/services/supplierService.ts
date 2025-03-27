@@ -6,14 +6,14 @@ class SupplierService {
     const { data, error } = await supabase
       .from('suppliers')
       .select('*')
-      .order('created_at', { ascending: false });
+      .order('name');
 
     if (error) {
       console.error('Error fetching suppliers:', error);
       throw new Error('Failed to fetch suppliers');
     }
 
-    return data || [];
+    return data;
   }
 
   async getSupplier(id: string): Promise<Supplier> {

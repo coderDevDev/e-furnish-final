@@ -56,9 +56,32 @@ export default function LoginPage() {
         email
       );
 
+      console.log({ data });
+      const { data: userData, error: roleError } = await supabase
+        .from('profiles') // Assuming you have a 'users' table
+        .select('role') // Adjust the field name as necessary
+        .eq('id', data?.user?.id) // Use user ID to fetch role
+        .single();
+
+      if (roleError) {
+        toast.error('Failed to fetch user role.');
+        return;
+      }
+
+      const userRole = userData?.role; // Assuming 'role' is the field name
+
+      console.log({ userRole });
+
       if (data.session) {
         toast.success('Logged in successfully');
-        window.location.href = isAdmin ? '/admin' : '/';
+
+        if (userRole === 'admin') {
+          window.location.href = '/admin';
+        } else if (userRole === 'supplier') {
+          window.location.href = '/supplier';
+        } else {
+          window.location.href = '/';
+        }
       }
     } catch (error) {
       console.error('Login error:', error);
