@@ -21,6 +21,11 @@ import { ListOrderedIcon } from 'lucide-react';
 
 const adminLinks = [
   {
+    label: 'Dashboard',
+    href: '/admin',
+    icon: RiDashboardLine
+  },
+  {
     label: 'Orders',
     href: '/admin/customer-orders',
     icon: ListOrderedIcon
@@ -31,8 +36,8 @@ const adminLinks = [
     icon: MdInventory2
   },
   {
-    label: 'Users',
-    href: '/admin/users',
+    label: 'My Account',
+    href: '/admin/my-account',
     icon: RiUser3Line
   },
   {
@@ -118,10 +123,10 @@ export default function AdminTemplate({
         )}>
         <div className="flex h-full flex-col border-r border-slate-100">
           {/* Sidebar Header */}
-          <div className="flex h-16 items-center justify-between px-4">
+          <div className="flex h-16 flex-col items-center justify-between px-4 mt-10">
             {isSidebarOpen && (
               <span className="text-xl font-semibold text-slate-900">
-                Admin
+                E-FURNISH
               </span>
             )}
           </div>

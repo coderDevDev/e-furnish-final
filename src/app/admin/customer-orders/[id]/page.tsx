@@ -34,6 +34,19 @@ import { Loader2, Printer, Mail, Ban, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import { OrderTimeline } from '../components/OrderTimeline';
 import { format } from 'date-fns';
+import { useRouter } from 'next/navigation';
+import { Badge } from '@/components/ui/badge';
+import {
+  User,
+  MapPin,
+  CalendarClock,
+  ShoppingBag,
+  CreditCard,
+  Banknote,
+  Truck,
+  AlertCircle
+} from 'lucide-react';
+import { Separator } from '@/components/ui/separator';
 
 const ORDER_STATUSES = [
   'pending',
@@ -49,10 +62,14 @@ export default function OrderDetailsPage({
 }: {
   params: { id: string };
 }) {
+  const router = useRouter();
+  const { id } = params;
   const [order, setOrder] = useState<OrderSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
   const [cancelReason, setCancelReason] = useState('');
+  const [newStatus, setNewStatus] = useState('');
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   useEffect(() => {
     loadOrderDetails();
@@ -60,8 +77,9 @@ export default function OrderDetailsPage({
 
   const loadOrderDetails = async () => {
     try {
-      const data = await customerOrderService.getOrderDetails(params.id);
+      const data = await customerOrderService.getOrderDetails(id);
       setOrder(data);
+      setNewStatus(data.status);
     } catch (error) {
       console.error('Error loading order details:', error);
       toast.error('Failed to load order details');
@@ -75,7 +93,7 @@ export default function OrderDetailsPage({
 
     setUpdating(true);
     try {
-      await customerOrderService.updateOrderStatus(order.id, newStatus);
+      await customerOrderService.updateOrderStatus(id, newStatus);
       toast.success('Order status updated successfully');
       loadOrderDetails();
     } catch (error) {
@@ -92,7 +110,7 @@ export default function OrderDetailsPage({
     setUpdating(true);
     try {
       await customerOrderService.updateOrderStatus(
-        order.id,
+        id,
         'cancelled',
         cancelReason
       );
@@ -114,15 +132,43 @@ export default function OrderDetailsPage({
     );
   }
 
-  //console.log({ order });
   if (!order) {
-    return <div>Order not found</div>;
+    return (
+      <div className="flex min-h-[50vh] flex-col items-center justify-center gap-2">
+        <AlertCircle className="h-12 w-12 text-red-500" />
+        <h2 className="text-xl font-semibold">Order Not Found</h2>
+        <p className="text-muted-foreground">
+          The requested order could not be found
+        </p>
+        <Button className="mt-4" onClick={() => router.back()}>
+          Go Back
+        </Button>
+      </div>
+    );
   }
 
+  // Format the complete address from shipping details
+  const formatCompleteAddress = () => {
+    if (!order.shipping_address) return 'No shipping details available';
+
+    const details = order.shipping_address;
+
+    // Gather all address components
+    const addressParts = [
+      details.street,
+      details.barangay_name,
+      details.city_name,
+      details.province_name,
+      details.region_name
+    ].filter(Boolean); // Filter out any undefined/null/empty values
+
+    return addressParts.join(', ');
+  };
+
   return (
-    <div className="flex-1 space-y-6 p-8">
+    <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-3xl font-bold tracking-tight">Order Details</h2>
+        <h1 className="text-2xl font-bold">Order #{order.id}</h1>
         <div className="flex items-center gap-4">
           <Button variant="outline" size="sm">
             <Printer className="mr-2 h-4 w-4" />
@@ -199,7 +245,7 @@ export default function OrderDetailsPage({
             <div>
               <p className="text-sm text-muted-foreground">Shipping Address</p>
               <p className="font-medium whitespace-pre-wrap">
-                {order.shipping_address.street}
+                {formatCompleteAddress()}
               </p>
             </div>
           </CardContent>
@@ -213,7 +259,7 @@ export default function OrderDetailsPage({
           <CardContent className="space-y-4">
             <div className="flex items-center gap-4">
               <Select
-                value={order.status}
+                value={newStatus}
                 onValueChange={handleStatusChange}
                 disabled={updating}>
                 <SelectTrigger className="w-[200px]">
@@ -279,6 +325,39 @@ export default function OrderDetailsPage({
           </CardContent>
         </Card>
       </div>
+
+      <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirm Status Update</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to update this order status to{' '}
+              <span className="font-semibold">
+                {newStatus.charAt(0).toUpperCase() + newStatus.slice(1)}
+              </span>
+              ?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setConfirmOpen(false)}
+              disabled={updating}>
+              Cancel
+            </Button>
+            <Button onClick={handleStatusChange} disabled={updating}>
+              {updating ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Updating...
+                </>
+              ) : (
+                'Confirm'
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -26,11 +26,35 @@ interface CustomizationOptionsProps {
 const ADDON_CATEGORIES = ['Carve'] as const;
 
 const materials = [
-  { id: 'leather', name: 'Premium Leather', priceMultiplier: 1.5, price: 2000 },
-  { id: 'fabric', name: 'Premium Fabric', priceMultiplier: 1.2, price: 1000 },
-  { id: 'velvet', name: 'Velvet', priceMultiplier: 1.3, price: 3000 },
-  { id: 'wood', name: 'Solid Wood', priceMultiplier: 1.4, price: 2500 }
-  // { id: 'custom', name: 'Custom Material', priceMultiplier: 1.0, price: 2500 }
+  {
+    id: 'narra',
+    name: 'Narra Wood',
+    description:
+      'Premium Philippine hardwood, known for durability and rich color',
+    priceMultiplier: 2.0,
+    price: 3500
+  },
+  {
+    id: 'mahogany',
+    name: 'Mahogany',
+    description: 'Classic reddish-brown wood with excellent durability',
+    priceMultiplier: 1.5,
+    price: 2500
+  },
+  {
+    id: 'red_lauan',
+    name: 'Red Lauan',
+    description: 'Light to medium hardwood with reddish color',
+    priceMultiplier: 1.3,
+    price: 2000
+  },
+  {
+    id: 'coco_lumber',
+    name: 'Coco Lumber',
+    description: 'Sustainable wood from coconut trees, medium density',
+    priceMultiplier: 1.0,
+    price: 1500
+  }
 ];
 
 export interface ProductCustomization {

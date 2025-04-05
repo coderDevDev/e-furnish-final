@@ -97,7 +97,7 @@ export default function ProfilePage() {
       if (error) throw error;
 
       if (profile) {
-        console.log({ profile });
+        console.log('Profile loaded:', profile);
 
         // Extract address fields from the address object
         const address = profile.address || {};
@@ -105,7 +105,7 @@ export default function ProfilePage() {
         form.reset({
           full_name: profile.full_name || '',
           email: profile.email || '',
-          phone_number: profile.phone?.replace('(+63) ', '') || '', // Remove (+63) prefix
+          phone_number: profile.phone?.replace('(+63) ', '') || '',
           street: address.street || '',
           barangay_name: address.barangay_name || '',
           city_name: address.city_name || '',
@@ -150,7 +150,7 @@ export default function ProfilePage() {
         .update({
           full_name: values.full_name,
           email: values.email,
-          phone: `(+63) ${values.phone_number}`, // Add (+63) prefix back
+          phone: `(+63) ${values.phone_number}`,
           address: address,
           updated_at: new Date().toISOString()
         })
@@ -170,28 +170,30 @@ export default function ProfilePage() {
 
   if (loading) {
     return (
-      <div className="flex h-[calc(100vh-4rem)] items-center justify-center">
+      <div className="flex items-center justify-center min-h-[70vh]">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
 
   return (
-    <div className="container max-w-6xl py-10">
+    <div className="container max-w-4xl mx-auto px-4 py-8 sm:py-10">
       <Tabs defaultValue="profile" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2 lg:w-[400px]">
-          <TabsTrigger value="profile">Profile</TabsTrigger>
-          <TabsTrigger value="orders">Orders</TabsTrigger>
-          {/* <TabsTrigger value="addresses">Addresses</TabsTrigger>
-          <TabsTrigger value="payments">Payments</TabsTrigger> */}
-        </TabsList>
+        <div className="flex justify-center mb-4">
+          <TabsList className="grid w-full max-w-md grid-cols-2">
+            <TabsTrigger value="profile">Profile</TabsTrigger>
+            <TabsTrigger value="orders">Orders</TabsTrigger>
+            {/* <TabsTrigger value="addresses">Addresses</TabsTrigger>
+            <TabsTrigger value="payments">Payments</TabsTrigger> */}
+          </TabsList>
+        </div>
 
         <TabsContent value="profile">
-          <Card>
-            <CardHeader>
-              <CardTitle>Profile Information</CardTitle>
+          <Card className="border-none shadow-md">
+            <CardHeader className="text-center">
+              <CardTitle className="text-2xl">My Profile</CardTitle>
               <CardDescription>
-                Update your personal information and contact details
+                Manage your personal information
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -199,7 +201,7 @@ export default function ProfilePage() {
                 <form
                   onSubmit={form.handleSubmit(onSubmit)}
                   className="space-y-6">
-                  <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-4">
                     <FormField
                       control={form.control}
                       name="full_name"
@@ -251,6 +253,9 @@ export default function ProfilePage() {
                       )}
                     />
 
+                    <Separator className="my-4" />
+                    <h3 className="text-lg font-medium">Address Information</h3>
+
                     <FormField
                       control={form.control}
                       name="street"
@@ -268,61 +273,65 @@ export default function ProfilePage() {
                       )}
                     />
 
-                    <FormField
-                      control={form.control}
-                      name="barangay_name"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Barangay</FormLabel>
-                          <FormControl>
-                            <Input {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="barangay_name"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Barangay</FormLabel>
+                            <FormControl>
+                              <Input {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
 
-                    <FormField
-                      control={form.control}
-                      name="city_name"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>City</FormLabel>
-                          <FormControl>
-                            <Input {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                      <FormField
+                        control={form.control}
+                        name="city_name"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>City</FormLabel>
+                            <FormControl>
+                              <Input {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
 
-                    <FormField
-                      control={form.control}
-                      name="province_name"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Province</FormLabel>
-                          <FormControl>
-                            <Input {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="province_name"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Province</FormLabel>
+                            <FormControl>
+                              <Input {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
 
-                    <FormField
-                      control={form.control}
-                      name="region_name"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Region</FormLabel>
-                          <FormControl>
-                            <Input {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                      <FormField
+                        control={form.control}
+                        name="region_name"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Region</FormLabel>
+                            <FormControl>
+                              <Input {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
 
                     <FormField
                       control={form.control}
@@ -339,12 +348,21 @@ export default function ProfilePage() {
                     />
                   </div>
 
-                  <Button type="submit" disabled={updating}>
-                    {updating && (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    )}
-                    Save Changes
-                  </Button>
+                  <div className="flex justify-center pt-4">
+                    <Button
+                      type="submit"
+                      disabled={updating}
+                      className="w-full sm:w-auto min-w-[200px]">
+                      {updating ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Saving...
+                        </>
+                      ) : (
+                        'Save Changes'
+                      )}
+                    </Button>
+                  </div>
                 </form>
               </Form>
             </CardContent>
