@@ -89,24 +89,39 @@ class CustomerOrderService {
     search?: string;
   }): Promise<OrderSummary[]> {
     try {
+      // Use explicit foreign key constraints to avoid ambiguity and a deeper nesting level
       let query = supabase.from('orders').select(`
-        *,
-        profiles!orders_user_id_fkey (
-          full_name,
-          email,
+        id,
+        created_at,
+        user_id,
+        total_amount,
+        payment_status,
+        payment_method,
+        status,
+        shipping_address,
+        shipping_fee,
+        profiles!orders_user_id_fkey(
+          id, 
+          full_name, 
+          email, 
           phone
         ),
-        order_items (
+        order_items:order_items(
+          id,
           quantity,
+          price,
           customization,
-          products!order_items_product_id_fkey (
-            title,
-            price
+          product_id,
+          products:products(
+            id, 
+            title, 
+            price, 
+            srcurl
           )
         )
       `);
 
-      // Apply filters
+      // Apply filters if provided
       if (filters?.status) {
         query = query.eq('status', filters.status);
       }
@@ -134,7 +149,13 @@ class CustomerOrderService {
         throw error;
       }
 
-      //console.log('Orders fetched:', data);
+      // Debug output
+      console.log('First order:', data?.[0]?.id);
+      console.log('Order items:', data?.[0]?.order_items?.length);
+      console.log(
+        'First order item product:',
+        data?.[0]?.order_items?.[0]?.products
+      );
 
       return data || [];
     } catch (error) {

@@ -23,7 +23,15 @@ import {
   Loader2,
   Trash2
 } from 'lucide-react';
-import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger
+} from '@/components/ui/dialog';
 import UpdateInventoryForm from './UpdateInventoryForm';
 import { toast } from 'sonner';
 import ProductModal from '@/components/admin/products/ProductModal';
@@ -56,6 +64,12 @@ export default function InventoryTable({
   );
   const [isLoading, setIsLoading] = useState(false);
   const itemsPerPage = 8;
+
+  // Add state for delete confirmation
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [productToDelete, setProductToDelete] = useState<InventoryItem | null>(
+    null
+  );
 
   // Filter products based on search term
   const filteredProducts = products.filter(product => {
@@ -92,14 +106,39 @@ export default function InventoryTable({
     setIsModalOpen(true);
   };
 
-  const handleDelete = async (id: string) => {
+  // Show delete confirmation dialog
+  const handleDeleteClick = (product: InventoryItem) => {
+    setProductToDelete(product);
+    setDeleteDialogOpen(true);
+  };
+
+  // Proceed with deletion if confirmed
+  const handleConfirmDelete = async () => {
+    if (!productToDelete) return;
+
     try {
       setIsLoading(true);
-      await onDelete(id);
+      await onDelete(productToDelete.id);
       toast.success('Product deleted successfully');
+      setDeleteDialogOpen(false);
+      setProductToDelete(null);
     } catch (error) {
       console.error('Error deleting product:', error);
-      toast.error('Failed to delete product');
+
+      // Check for foreign key constraint violation
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      if (
+        errorMessage.includes('foreign key constraint') ||
+        errorMessage.includes('still referenced') ||
+        errorMessage.includes('violates foreign key constraint')
+      ) {
+        toast.error(
+          "This product cannot be deleted because it's used in existing orders. You can update its stock to zero or mark it as discontinued instead."
+        );
+      } else {
+        toast.error('Failed to delete product');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -129,7 +168,7 @@ export default function InventoryTable({
     }
   };
 
-  const handleSaveProduct = async (productData: Partial<Product>) => {
+  const handleSaveProduct = async (productData: Partial<InventoryItem>) => {
     try {
       if (productData.id) {
         // Update existing product
@@ -156,7 +195,7 @@ export default function InventoryTable({
   return (
     <div className="w-full space-y-4">
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6">
-        <div className="relative w-full sm:w-[300px]">
+        {/* <div className="relative w-full sm:w-[300px]">
           <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Search inventory..."
@@ -164,7 +203,7 @@ export default function InventoryTable({
             onChange={e => setSearchTerm(e.target.value)}
             className="pl-8 transition-all duration-200"
           />
-        </div>
+        </div> */}
         <Button
           onClick={() => {
             setSelectedProduct(null);
@@ -219,7 +258,7 @@ export default function InventoryTable({
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => handleDelete(product.id)}
+                        onClick={() => handleDeleteClick(product)}
                         className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-red-600">
                         <Trash2 className="h-4 w-4 text-red-500" />
                       </Button>
@@ -241,6 +280,32 @@ export default function InventoryTable({
         onSave={handleSaveProduct}
         product={selectedProduct}
       />
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Confirm Deletion</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this product? This action cannot
+              be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex space-x-2 justify-end">
+            <Button
+              variant="outline"
+              onClick={() => setDeleteDialogOpen(false)}>
+              No, Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleConfirmDelete}
+              disabled={isLoading}>
+              {isLoading ? 'Deleting...' : 'Yes, Delete'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4 py-4">
         <div className="text-sm text-muted-foreground">

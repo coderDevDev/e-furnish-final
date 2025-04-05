@@ -468,6 +468,7 @@ export default function CustomerOrdersPage() {
                         <TableRow>
                           <TableHead>Order ID</TableHead>
                           <TableHead>Customer</TableHead>
+                          <TableHead>Products</TableHead>
                           <TableHead>Date</TableHead>
                           <TableHead>Status</TableHead>
                           <TableHead>Total</TableHead>
@@ -482,6 +483,41 @@ export default function CustomerOrdersPage() {
                             </TableCell>
                             <TableCell>
                               {order.profiles?.full_name || 'Unknown'}
+                            </TableCell>
+                            <TableCell>
+                              {order.order_items &&
+                              order.order_items.length > 0 ? (
+                                <div className="flex items-center gap-2">
+                                  {order.order_items[0].products?.srcurl ? (
+                                    <img
+                                      src={
+                                        order.order_items[0].products?.srcurl
+                                      }
+                                      alt={order.order_items[0].products.title}
+                                      className="h-10 w-10 rounded-md object-cover border"
+                                    />
+                                  ) : (
+                                    <div className="h-10 w-10 bg-muted rounded-md flex items-center justify-center text-muted-foreground">
+                                      No img
+                                    </div>
+                                  )}
+                                  <div className="flex flex-col">
+                                    <span className="font-medium truncate max-w-[150px]">
+                                      {order.order_items[0].products.title}
+                                    </span>
+                                    {order.order_items.length > 1 && (
+                                      <span className="text-xs text-muted-foreground">
+                                        +{order.order_items.length - 1} more
+                                        items
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                              ) : (
+                                <span className="text-muted-foreground">
+                                  No items
+                                </span>
+                              )}
                             </TableCell>
                             <TableCell>
                               {format(
@@ -653,6 +689,7 @@ function OrderStatusTable({ orders }: { orders: OrderSummary[] }) {
         <TableRow>
           <TableHead>Order ID</TableHead>
           <TableHead>Customer</TableHead>
+          <TableHead>Products</TableHead>
           <TableHead>Date</TableHead>
           <TableHead>Total</TableHead>
           <TableHead className="text-right">Actions</TableHead>
@@ -663,6 +700,35 @@ function OrderStatusTable({ orders }: { orders: OrderSummary[] }) {
           <TableRow key={order.id}>
             <TableCell className="font-medium">#{order.id}</TableCell>
             <TableCell>{order.profiles?.full_name || 'Unknown'}</TableCell>
+            <TableCell>
+              {order.order_items && order.order_items.length > 0 ? (
+                <div className="flex items-center gap-2">
+                  {order.order_items[0].products?.srcurl ? (
+                    <img
+                      src={order.order_items[0].products?.srcurl}
+                      alt={order.order_items[0].products.title}
+                      className="h-10 w-10 rounded-md object-cover border"
+                    />
+                  ) : (
+                    <div className="h-10 w-10 bg-muted rounded-md flex items-center justify-center text-muted-foreground">
+                      No img
+                    </div>
+                  )}
+                  <div className="flex flex-col">
+                    <span className="font-medium truncate max-w-[150px]">
+                      {order.order_items[0].products.title}
+                    </span>
+                    {order.order_items.length > 1 && (
+                      <span className="text-xs text-muted-foreground">
+                        +{order.order_items.length - 1} more items
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <span className="text-muted-foreground">No items</span>
+              )}
+            </TableCell>
             <TableCell>
               {format(new Date(order.created_at), 'MMM dd, yyyy')}
             </TableCell>

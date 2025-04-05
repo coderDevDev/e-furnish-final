@@ -42,6 +42,7 @@ export default function InventorySupplierPage() {
   };
 
   const handleDeleteOffer = async (id: number) => {
+    console.log('delete');
     await supplierOfferService.deleteOffer(id);
     fetchOffers();
   };

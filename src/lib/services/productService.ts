@@ -120,10 +120,26 @@ class ProductService {
   }
 
   async deleteProduct(id: string): Promise<void> {
-    const { error } = await supabase.from('products').delete().eq('id', id);
+    // Step 1: Delete all order_items referencing the product
+    const { error: orderItemsError } = await supabase
+      .from('order_items')
+      .delete()
+      .eq('product_id', id);
 
-    if (error) {
-      throw new Error('Failed to delete product');
+    if (orderItemsError) {
+      throw new Error(
+        'Failed to delete related order items: ' + orderItemsError.message
+      );
+    }
+
+    // Step 2: Delete the product itself
+    const { error: productError } = await supabase
+      .from('products')
+      .delete()
+      .eq('id', id);
+
+    if (productError) {
+      throw new Error('Failed to delete product: ' + productError.message);
     }
   }
 

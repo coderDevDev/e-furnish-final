@@ -537,7 +537,7 @@ export default function ProductModal({
             </div>
 
             {/* Rating and Sales Count Fields */}
-            <div className="grid grid-cols-2 gap-4">
+            {/* <div className="grid grid-cols-2 gap-4">
               <FormField
                 label="Rating"
                 name="rating"
@@ -553,7 +553,7 @@ export default function ProductModal({
                 min="0"
                 step="1"
               />
-            </div>
+            </div> */}
 
             {/* Main Image Upload */}
             <div className="space-y-3">

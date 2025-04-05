@@ -35,6 +35,15 @@ import type {
 import type { Product } from '@/types/product.types';
 import SupplierOfferTable from './SupplierOfferTable';
 import { supplierOfferService } from '@/lib/services/supplierOfferService';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 const initialInventory: InventoryItem[] = [
   { id: 1, name: 'Widget A', quantity: 100, supplierId: 1 },
@@ -86,6 +95,9 @@ export default function InventoryManagement({
   const [notifiedItems, setNotifiedItems] = useState<Set<string>>(new Set());
   const [offers, setOffers] = useState<SupplierOffer[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  const [categories, setCategories] = useState<string[]>([]);
+  const [searchQuery, setSearchQuery] = useState<string>('');
 
   // const [products, setProducts] = useState<Product[]>(products);
   // Fetch initial data
@@ -107,6 +119,34 @@ export default function InventoryManagement({
     };
     fetchData();
   }, []);
+
+  // Add this useEffect to extract categories from products
+  useEffect(() => {
+    // Extract unique categories from products
+    const uniqueCategories = new Set<string>();
+
+    // Add 'all' as the default option
+    uniqueCategories.add('all');
+
+    // Extract categories from products
+    products.forEach(product => {
+      if (product.category) {
+        uniqueCategories.add(product.category);
+      } else {
+        uniqueCategories.add('Uncategorized');
+      }
+    });
+
+    // Convert Set to Array and sort alphabetically (keeping 'all' at the beginning)
+    const categoriesArray = Array.from(uniqueCategories);
+    const sortedCategories = [
+      'all',
+      ...categoriesArray.filter(cat => cat !== 'all').sort()
+    ];
+
+    // Update categories state
+    setCategories(sortedCategories);
+  }, [products]);
 
   const updateInventory = async (data: Partial<InventoryItem>) => {
     try {
@@ -318,6 +358,20 @@ export default function InventoryManagement({
     fetchOffers();
   }, []);
 
+  // Filter products by category and search query
+  const filteredProducts = products.filter(product => {
+    // Filter by category
+    const matchesCategory =
+      categoryFilter === 'all' || product.category === categoryFilter;
+
+    // Filter by search query
+    const matchesSearch = searchQuery
+      ? product.title.toLowerCase().includes(searchQuery.toLowerCase())
+      : true;
+
+    return matchesCategory && matchesSearch;
+  });
+
   return (
     <div className="container mx-auto py-6 space-y-6">
       <Tabs defaultValue="inventory" className="w-full">
@@ -373,9 +427,37 @@ export default function InventoryManagement({
               </CardDescription>
             </CardHeader>
             <CardContent>
+              <div className="mb-4 flex items-center gap-4">
+                <div className="w-1/3">
+                  <Label htmlFor="category-filter">Filter by Category</Label>
+                  <Select
+                    value={categoryFilter}
+                    onValueChange={setCategoryFilter}>
+                    <SelectTrigger id="category-filter">
+                      <SelectValue placeholder="Select category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {categories.map(category => (
+                        <SelectItem key={category} value={category}>
+                          {category === 'all' ? 'All Categories' : category}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="w-2/3">
+                  <Label htmlFor="search-query">Search</Label>
+                  <Input
+                    id="search-query"
+                    placeholder="Search by name..."
+                    value={searchQuery}
+                    onChange={e => setSearchQuery(e.target.value)}
+                  />
+                </div>
+              </div>
               <InventoryTable
                 fetchProducts={fetchProducts}
-                products={products}
+                products={filteredProducts}
                 suppliers={suppliers}
                 onUpdate={handleUpdateProduct}
                 onDelete={handleDeleteProduct}
