@@ -217,7 +217,7 @@ export default function AddRawMaterialOfferForm({
         </DialogHeader>
         <form onSubmit={handleSubmit(onSubmit)}>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <FormField label="Select Supplier" icon={Building2}>
+            <FormField label="Supplier Name" icon={Building2}>
               <Input
                 disabled
                 type="text"

@@ -2,15 +2,26 @@
 
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import React, { useState } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
+import React, { useState, useEffect } from 'react';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { toast } from 'sonner';
-
+import {
+  RiDashboardLine,
+  RiUser3Line,
+  RiFileTextLine,
+  RiFileListLine
+} from 'react-icons/ri';
 const supplierLinks = [
   {
+    label: 'Dashboard',
+    href: '/supplier',
+    icon: RiDashboardLine
+  },
+  {
     label: 'Profile Verification',
-    href: '/supplier/profile'
+    href: '/supplier/profile',
+    icon: RiUser3Line
   },
   // {
   //   label: 'Materials',
@@ -18,15 +29,18 @@ const supplierLinks = [
   // },
   {
     label: 'Material Offers',
-    href: '/supplier/offers'
+    href: '/supplier/offers',
+    icon: RiFileTextLine
   },
   {
     label: 'Owner Orders',
-    href: '/supplier/orders'
+    href: '/supplier/orders',
+    icon: RiFileTextLine
   },
   {
     label: 'Transactions',
-    href: '/supplier/transactions'
+    href: '/supplier/transactions',
+    icon: RiFileListLine
   }
 ];
 
@@ -37,6 +51,7 @@ export default function SupplierLayout({
 }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const pathname = usePathname();
+  const router = useRouter();
   const supabase = createClientComponentClient();
 
   const handleLogout = async () => {
@@ -49,6 +64,19 @@ export default function SupplierLayout({
       toast.error('Failed to log out');
     }
   };
+
+  useEffect(() => {
+    const checkSession = async () => {
+      const {
+        data: { session }
+      } = await supabase.auth.getSession();
+      if (!session) {
+        router.push('/login');
+      }
+    };
+
+    checkSession();
+  }, [router]);
 
   return (
     <div className="flex h-screen bg-slate-50">
@@ -67,6 +95,7 @@ export default function SupplierLayout({
           </div>
           <div className="flex-1 overflow-y-auto p-4">
             <nav className="space-y-2">
+              {/* add the icon  */}
               {supplierLinks.map(link => (
                 <Link
                   key={link.href}
@@ -77,6 +106,7 @@ export default function SupplierLayout({
                       ? 'bg-primary/10 text-primary'
                       : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                   )}>
+                  {link.icon && <link.icon className="w-6 h-6 mr-4" />}
                   {link.label}
                 </Link>
               ))}
