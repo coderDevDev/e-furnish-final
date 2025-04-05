@@ -1,7 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import type { InventoryItem, Supplier } from '@/types/inventory.types';
+import type {
+  InventoryItem,
+  Supplier,
+  Category
+} from '@/types/inventory.types';
 import {
   Table,
   TableBody,
@@ -21,7 +25,8 @@ import {
   ChevronRight,
   Plus,
   Loader2,
-  Trash2
+  Trash2,
+  Tag
 } from 'lucide-react';
 import {
   Dialog,
@@ -35,26 +40,33 @@ import {
 import UpdateInventoryForm from './UpdateInventoryForm';
 import { toast } from 'sonner';
 import ProductModal from '@/components/admin/products/ProductModal';
+import CategoryModal from '@/components/admin/categories/CategoryModal';
 
 import { productService } from '@/services/productService';
+import { categoryService } from '@/services/categoryService';
+
 interface InventoryTableProps {
   products: InventoryItem[];
   suppliers: Supplier[];
+  categories: Category[];
   onUpdate: (id: string, data: Partial<InventoryItem>) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
   onAdd: (
     data: Omit<InventoryItem, 'id' | 'created_at' | 'updated_at'>
   ) => Promise<void>;
   fetchProducts: () => Promise<void>;
+  fetchCategories: () => Promise<void>;
 }
 
 export default function InventoryTable({
   products,
   suppliers,
+  categories,
   onUpdate,
   onDelete,
   onAdd,
-  fetchProducts
+  fetchProducts,
+  fetchCategories
 }: InventoryTableProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
@@ -63,13 +75,18 @@ export default function InventoryTable({
     null
   );
   const [isLoading, setIsLoading] = useState(false);
-  const itemsPerPage = 8;
+  const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<Category | null>(
+    null
+  );
 
   // Add state for delete confirmation
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [productToDelete, setProductToDelete] = useState<InventoryItem | null>(
     null
   );
+
+  const itemsPerPage = 8;
 
   // Filter products based on search term
   const filteredProducts = products.filter(product => {
@@ -192,6 +209,61 @@ export default function InventoryTable({
     }
   };
 
+  const handleAddCategory = async (data: Omit<Category, 'id'>) => {
+    try {
+      setIsLoading(true);
+      await categoryService.createCategory(data);
+      toast.success('Category created successfully');
+      fetchCategories();
+    } catch (error) {
+      console.error('Error creating category:', error);
+      toast.error('Failed to create category');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleUpdateCategory = async (id: string, data: Partial<Category>) => {
+    try {
+      setIsLoading(true);
+      await categoryService.updateCategory(id, data);
+      toast.success('Category updated successfully');
+      fetchCategories();
+    } catch (error) {
+      console.error('Error updating category:', error);
+      toast.error('Failed to update category');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDeleteCategory = async (id: string) => {
+    try {
+      setIsLoading(true);
+      await categoryService.deleteCategory(id);
+      toast.success('Category deleted successfully');
+      fetchCategories();
+    } catch (error) {
+      console.error('Error deleting category:', error);
+
+      // Check for foreign key constraint violation
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      if (
+        errorMessage.includes('foreign key constraint') ||
+        errorMessage.includes('still referenced')
+      ) {
+        toast.error(
+          "This category cannot be deleted because it's used by existing products. Please reassign products first."
+        );
+      } else {
+        toast.error('Failed to delete category');
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="w-full space-y-4">
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6">
@@ -204,14 +276,26 @@ export default function InventoryTable({
             className="pl-8 transition-all duration-200"
           />
         </div> */}
-        <Button
-          onClick={() => {
-            setSelectedProduct(null);
-            setIsModalOpen(true);
-          }}
-          className="bg-primary hover:bg-primary/90 text-white">
-          <Plus className="mr-2 h-4 w-4" /> Add Item
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            onClick={() => {
+              setSelectedProduct(null);
+              setIsModalOpen(true);
+            }}
+            className="bg-primary hover:bg-primary/90 text-white">
+            <Plus className="mr-2 h-4 w-4" /> Add Item
+          </Button>
+
+          <Button
+            onClick={() => {
+              setSelectedCategory(null);
+              setIsCategoryModalOpen(true);
+            }}
+            variant="outline"
+            className="border-primary text-primary hover:bg-primary/10">
+            <Tag className="mr-2 h-4 w-4" /> Manage Categories
+          </Button>
+        </div>
       </div>
 
       <div className="rounded-lg border bg-card shadow-sm overflow-hidden">
@@ -279,6 +363,21 @@ export default function InventoryTable({
         }}
         onSave={handleSaveProduct}
         product={selectedProduct}
+        categories={categories}
+      />
+
+      <CategoryModal
+        isOpen={isCategoryModalOpen}
+        onClose={() => {
+          setIsCategoryModalOpen(false);
+          setSelectedCategory(null);
+        }}
+        onAdd={handleAddCategory}
+        onUpdate={handleUpdateCategory}
+        onDelete={handleDeleteCategory}
+        categories={categories}
+        selectedCategory={selectedCategory}
+        isLoading={isLoading}
       />
 
       {/* Delete Confirmation Dialog */}

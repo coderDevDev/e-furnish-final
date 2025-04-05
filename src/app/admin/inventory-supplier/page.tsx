@@ -42,7 +42,6 @@ export default function InventorySupplierPage() {
   };
 
   const handleDeleteOffer = async (id: number) => {
-    console.log('delete');
     await supplierOfferService.deleteOffer(id);
     fetchOffers();
   };
@@ -50,12 +49,12 @@ export default function InventorySupplierPage() {
   return (
     <div className="">
       <InventoryManagement products={products} fetchProducts={fetchProducts} />
-      <h2 className="text-2xl font-semibold">Supplier Offers Management</h2>
+      {/* <h2 className="text-2xl font-semibold">Supplier Offers Management</h2>
       <Button
         onClick={() => setIsModalOpen(true)}
         className="bg-primary text-white p-2 rounded">
         Add Supplier Offer
-      </Button>
+      </Button> */}
       <SupplierOfferList
         offers={offers}
         onEdit={() => {}}

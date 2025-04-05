@@ -179,3 +179,11 @@ export const ownerOrderSchema = z.object({
     .string()
     .min(1, 'Target completion date is required')
 });
+
+export interface Category {
+  id: string;
+  name: string;
+  description?: string;
+  created_at?: string;
+  updated_at?: string;
+}

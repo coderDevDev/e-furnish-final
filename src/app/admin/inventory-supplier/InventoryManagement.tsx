@@ -30,7 +30,8 @@ import type {
   InventoryItem,
   Supplier,
   PurchaseOrder,
-  SupplierOffer
+  SupplierOffer,
+  Category
 } from '@/types/inventory.types';
 import type { Product } from '@/types/product.types';
 import SupplierOfferTable from './SupplierOfferTable';
@@ -44,6 +45,7 @@ import {
 } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { categoryService } from '@/lib/services/categoryService';
 
 const initialInventory: InventoryItem[] = [
   { id: 1, name: 'Widget A', quantity: 100, supplierId: 1 },
@@ -96,7 +98,7 @@ export default function InventoryManagement({
   const [offers, setOffers] = useState<SupplierOffer[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
-  const [categories, setCategories] = useState<string[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [searchQuery, setSearchQuery] = useState<string>('');
 
   // const [products, setProducts] = useState<Product[]>(products);
@@ -120,33 +122,73 @@ export default function InventoryManagement({
     fetchData();
   }, []);
 
-  // Add this useEffect to extract categories from products
+  // Updated useEffect to merge categories from products with database categories
   useEffect(() => {
-    // Extract unique categories from products
-    const uniqueCategories = new Set<string>();
+    // This function merges product categories with database categories
+    const mergeCategories = async () => {
+      try {
+        // Get categories from database
+        const dbCategories = await categoryService.getAllCategories();
 
-    // Add 'all' as the default option
-    uniqueCategories.add('all');
+        // Extract unique category names from products
+        const productCategoryNames = new Set<string>();
 
-    // Extract categories from products
-    products.forEach(product => {
-      if (product.category) {
-        uniqueCategories.add(product.category);
-      } else {
-        uniqueCategories.add('Uncategorized');
+        products.forEach(product => {
+          if (product.category && product.category.trim()) {
+            productCategoryNames.add(product.category.trim());
+          }
+        });
+
+        // Find category names that exist in products but not in database
+        const newCategoryNames = Array.from(productCategoryNames).filter(
+          name =>
+            !dbCategories.some(
+              cat => cat.name.toLowerCase() === name.toLowerCase()
+            )
+        );
+
+        // Create any missing categories in the database
+        const creationPromises = newCategoryNames.map(name =>
+          categoryService.createCategory({
+            name,
+            description: `Auto-generated from product category "${name}"`
+          })
+        );
+
+        // If there are new categories to create, create them and fetch all again
+        if (creationPromises.length > 0) {
+          await Promise.all(creationPromises);
+          const updatedCategories = await categoryService.getAllCategories();
+          setCategories(updatedCategories);
+        } else {
+          // Otherwise just use the fetched categories
+          setCategories(dbCategories);
+        }
+      } catch (error) {
+        console.error('Error merging categories:', error);
+        toast.error('Failed to update categories');
       }
-    });
+    };
 
-    // Convert Set to Array and sort alphabetically (keeping 'all' at the beginning)
-    const categoriesArray = Array.from(uniqueCategories);
-    const sortedCategories = [
-      'all',
-      ...categoriesArray.filter(cat => cat !== 'all').sort()
-    ];
-
-    // Update categories state
-    setCategories(sortedCategories);
+    // Run the merge function when products change
+    if (products.length > 0) {
+      mergeCategories();
+    }
   }, [products]);
+
+  // Keep the separate fetchCategories function for explicit refresh
+  const fetchCategories = async () => {
+    try {
+      setIsLoading(true);
+      const categoriesData = await categoryService.getAllCategories();
+      setCategories(categoriesData);
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+      toast.error('Failed to fetch categories');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const updateInventory = async (data: Partial<InventoryItem>) => {
     try {
@@ -356,13 +398,20 @@ export default function InventoryManagement({
   useEffect(() => {
     fetchSuppliers();
     fetchOffers();
+    fetchCategories();
   }, []);
 
   // Filter products by category and search query
   const filteredProducts = products.filter(product => {
     // Filter by category
     const matchesCategory =
-      categoryFilter === 'all' || product.category === categoryFilter;
+      categoryFilter === 'all' ||
+      (product.category &&
+        categories.some(
+          cat =>
+            cat.id === categoryFilter &&
+            cat.name.toLowerCase() === product.category.toLowerCase()
+        ));
 
     // Filter by search query
     const matchesSearch = searchQuery
@@ -437,9 +486,12 @@ export default function InventoryManagement({
                       <SelectValue placeholder="Select category" />
                     </SelectTrigger>
                     <SelectContent>
+                      <SelectItem key="all" value="all">
+                        All Categories
+                      </SelectItem>
                       {categories.map(category => (
-                        <SelectItem key={category} value={category}>
-                          {category === 'all' ? 'All Categories' : category}
+                        <SelectItem key={category.id} value={category.id}>
+                          {category.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -456,12 +508,14 @@ export default function InventoryManagement({
                 </div>
               </div>
               <InventoryTable
-                fetchProducts={fetchProducts}
                 products={filteredProducts}
                 suppliers={suppliers}
+                categories={categories}
                 onUpdate={handleUpdateProduct}
                 onDelete={handleDeleteProduct}
                 onAdd={handleAddProduct}
+                fetchProducts={fetchProducts}
+                fetchCategories={fetchCategories}
               />
             </CardContent>
           </Card>
@@ -561,12 +615,6 @@ export default function InventoryManagement({
           <SupplierOfferTable offers={offers} onRefresh={fetchOffers} />
         </TabsContent>
       </Tabs> */}
-
-      {role === 'admin' ? (
-        <p>Admin-specific content here</p>
-      ) : (
-        <p>Supplier-specific content here</p>
-      )}
     </div>
   );
 }

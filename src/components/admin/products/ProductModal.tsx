@@ -6,6 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { X, Upload, Plus, Trash2, Loader2, AlertCircle } from 'lucide-react';
 import { Product } from '@/types/product.types';
+import { Category } from '@/types/inventory.types';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { toast } from 'sonner';
 
@@ -14,6 +15,7 @@ interface ProductModalProps {
   onClose: () => void;
   onSave: (product: Partial<Product>) => Promise<void>;
   product?: Product | null;
+  categories?: Category[];
 }
 
 interface ImagePreview {
@@ -61,7 +63,8 @@ export default function ProductModal({
   isOpen,
   onClose,
   onSave,
-  product
+  product,
+  categories = []
 }: ProductModalProps) {
   const {
     register,
@@ -424,7 +427,12 @@ export default function ProductModal({
               errors[name] ? 'border-red-300' : 'border-slate-200'
             } px-4 py-2 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary`}
             {...props}>
-            {props.children}
+            <option value="">Select a category</option>
+            {categories.map(category => (
+              <option key={category.id} value={category.name}>
+                {category.name}
+              </option>
+            ))}
           </select>
         ) : (
           <input
@@ -483,17 +491,14 @@ export default function ProductModal({
             <FormField label="Product Name" name="title" />
 
             <div>
-              {/* <label className="block text-sm font-medium text-slate-700">
-                Category
-              </label> */}
               <div className="relative mt-1">
                 <FormField label="Category" name="category" as="select">
                   <option value="">Select a category</option>
-                  <option value="Sofas">Sofas</option>
-                  <option value="Chairs">Chairs</option>
-                  <option value="Tables">Tables</option>
-                  <option value="Bed">Bed</option>
-                  <option value="Cabinet">Cabinet</option>
+                  {categories.map(category => (
+                    <option key={category.id} value={category.name}>
+                      {category.name}
+                    </option>
+                  ))}
                 </FormField>
                 {errors.category && (
                   <div className="absolute right-0 top-0 flex h-full items-center pr-3">
@@ -501,11 +506,6 @@ export default function ProductModal({
                   </div>
                 )}
               </div>
-              {/* {errors.category && (
-                <p className="mt-1 text-sm text-red-500">
-                  {errors.category.message}
-                </p>
-              )} */}
             </div>
 
             {/* Description Field */}
@@ -535,25 +535,6 @@ export default function ProductModal({
                 step="1"
               />
             </div>
-
-            {/* Rating and Sales Count Fields */}
-            {/* <div className="grid grid-cols-2 gap-4">
-              <FormField
-                label="Rating"
-                name="rating"
-                type="number"
-                min="0"
-                max="5"
-                step="0.1"
-              />
-              <FormField
-                label="Sales Count"
-                name="sales_count"
-                type="number"
-                min="0"
-                step="1"
-              />
-            </div> */}
 
             {/* Main Image Upload */}
             <div className="space-y-3">
