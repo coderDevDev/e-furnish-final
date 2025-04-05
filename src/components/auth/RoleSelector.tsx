@@ -12,7 +12,7 @@ interface RoleSelectorProps {
 const roles = [
   {
     id: 'user',
-    title: 'User',
+    title: 'Customer',
     description: 'Shop and manage your orders',
     icon: User
   },
@@ -24,7 +24,7 @@ const roles = [
   },
   {
     id: 'admin',
-    title: 'Admin',
+    title: 'Owner',
     description: 'Full system management',
     icon: ShieldCheck
   }

@@ -6,6 +6,7 @@ import React, { useState } from 'react';
 import ProductDetailsContent from './ProductDetailsContent';
 import ReviewsContent from './ReviewsContent';
 import FaqContent from './FaqContent';
+import { useParams } from 'next/navigation';
 
 type TabBtn = {
   id: number;
@@ -13,22 +14,30 @@ type TabBtn = {
 };
 
 const tabBtnData: TabBtn[] = [
-  // {
-  //   id: 1,
-  //   label: "Product Details",
-  // },
-  // {
-  //   id: 2,
-  //   label: "Rating & Reviews",
-  // },
-  // {
-  //   id: 3,
-  //   label: "FAQs",
-  // },
+  {
+    id: 1,
+    label: 'Product Details'
+  },
+  {
+    id: 2,
+    label: 'Rating & Reviews'
+  },
+  {
+    id: 3,
+    label: 'FAQs'
+  }
 ];
 
-const Tabs = () => {
+interface TabsProps {
+  productId: string;
+}
+
+const Tabs = ({ productId }: TabsProps) => {
   const [active, setActive] = useState<number>(1);
+  // get the product id from the url
+  // its like http://localhost:3000/shop/product/18
+
+  console.log({ productId });
 
   return (
     <div>
@@ -51,7 +60,7 @@ const Tabs = () => {
       </div>
       <div className="mb-12 sm:mb-16">
         {active === 1 && <ProductDetailsContent />}
-        {active === 2 && <ReviewsContent />}
+        {active === 2 && <ReviewsContent productId={productId} />}
         {active === 3 && <FaqContent />}
       </div>
     </div>

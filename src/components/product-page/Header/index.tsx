@@ -107,7 +107,7 @@ const Header = ({ data }: { data: Product }) => {
               </span>
             ) : (
               <span className="font-bold text-black text-2xl sm:text-[32px]">
-                ₱{data.price}
+                ₱{data.price.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
               </span>
             )}
             {data.discount.percentage > 0 && (

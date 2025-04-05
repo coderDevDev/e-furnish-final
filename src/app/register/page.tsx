@@ -277,7 +277,7 @@ export default function RegisterPage() {
                   id="phone"
                   {...register('phone')}
                   className={errors.phone ? 'border-red-500' : ''}
-                  placeholder="+1234567890"
+                  placeholder="+639"
                 />
                 {errors.phone && (
                   <p className="text-xs text-red-500">{errors.phone.message}</p>

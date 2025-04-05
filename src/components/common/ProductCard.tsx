@@ -49,10 +49,12 @@ const ProductCard = ({ data }: ProductCardProps) => {
           <span className="text-black/60">/5</span>
         </span>
       </div>
+
       <div className="flex items-center space-x-[5px] xl:space-x-2.5">
         {data.discount.percentage > 0 ? (
           <span className="font-bold text-black text-xl xl:text-2xl">
-            {`$${Math.round(
+            {/* like P250.00 and wit comma  */}
+            {` ₱${Math.round(
               data.price - (data.price * data.discount.percentage) / 100
             )}`}
           </span>
@@ -62,7 +64,8 @@ const ProductCard = ({ data }: ProductCardProps) => {
           </span>
         ) : (
           <span className="font-bold text-black text-xl xl:text-2xl">
-            ₱{data.price}
+            {/* like P250.00 and wit comma  */}₱
+            {data.price.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
           </span>
         )}
         {data.discount.percentage > 0 && (

@@ -30,6 +30,13 @@ import { useRouter } from 'next/navigation';
 import { authService } from '@/lib/services/authService';
 import { clearCart } from '@/lib/features/carts/cartsSlice';
 import type { CartItem } from '@/lib/features/carts/cartsSlice';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle
+} from '@/components/ui/dialog';
+import { CheckCircle2 } from 'lucide-react';
 
 const formSchema = z.object({
   paymentMethod: z.enum(['cod', 'paypal']),
@@ -40,12 +47,14 @@ type PaymentFormValues = z.infer<typeof formSchema>;
 
 interface PaymentFormProps {
   onNext: () => void;
-  totalAmount: number;
 }
 
-export function PaymentForm({ onNext, totalAmount }: PaymentFormProps) {
+export function PaymentForm({ onNext }: PaymentFormProps) {
   const [isProcessing, setIsProcessing] = useState(false);
+  const [successDialogOpen, setSuccessDialogOpen] = useState(false);
+  const [placedOrderId, setPlacedOrderId] = useState<string | null>(null);
   const { items } = useAppSelector(state => state.carts);
+  const shippingFee = useAppSelector(state => state.checkout.shippingFee);
   const router = useRouter();
   const dispatch = useAppDispatch();
 
@@ -53,7 +62,7 @@ export function PaymentForm({ onNext, totalAmount }: PaymentFormProps) {
   const calculateTotals = () => {
     if (!hasItems) return { subtotal: 0, discount: 0, total: 0 };
 
-    return items.reduce(
+    const itemTotals = items.reduce(
       (acc, item: CartItem) => {
         const basePrice = item.product.price * item.quantity;
         const customizationCost =
@@ -70,6 +79,11 @@ export function PaymentForm({ onNext, totalAmount }: PaymentFormProps) {
       },
       { subtotal: 0, discount: 0, total: 0 }
     );
+
+    return {
+      ...itemTotals,
+      total: itemTotals.total + shippingFee
+    };
   };
 
   const { total } = calculateTotals();
@@ -83,46 +97,47 @@ export function PaymentForm({ onNext, totalAmount }: PaymentFormProps) {
 
   const selectedMethod = form.watch('paymentMethod');
 
-  async function onSubmit(values: PaymentFormValues) {
-    if (values.paymentMethod === 'cod') {
-      try {
-        setIsProcessing(true);
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    if (!hasItems) return;
 
-        const userProfile = await authService.getUserProfile();
-        if (!userProfile?.user || !userProfile?.profile) {
-          throw new Error('No user profile found');
-        }
+    setIsProcessing(true);
+    try {
+      const userProfile = await authService.getUserProfile();
+      if (!userProfile) throw new Error('User profile not found');
 
-        const orderItems = items.map(item => ({
-          product_id: item.product.id,
-          quantity: item.quantity,
-          price: item.product.price,
-          customization: item.customization
-        }));
+      const orderItems = items.map(item => ({
+        product_id: item.product.id,
+        quantity: item.quantity,
+        price: item.product.price,
+        customization: item.product.customization
+      }));
 
-        await authService.createOrder({
-          user_id: userProfile.user.id,
-          items: orderItems,
-          total_amount: total,
-          payment_method: 'cod',
-          payment_status: 'pending',
-          shipping_address: userProfile.profile.address,
-          change_needed: values.changeNeeded
-            ? parseFloat(values.changeNeeded)
-            : undefined
-        });
+      const { data: order, error } = await authService.createOrder({
+        user_id: userProfile.user.id,
+        items: orderItems,
+        total_amount: total,
+        shipping_fee: shippingFee,
+        payment_method: 'cod',
+        payment_status: 'pending',
+        shipping_address: userProfile.profile.address,
+        change_needed: values.changeNeeded
+          ? parseFloat(values.changeNeeded)
+          : undefined
+      });
 
-        dispatch(clearCart());
-        toast.success('Order placed successfully!');
-        onNext();
-      } catch (error) {
-        console.error('Order error:', error);
-        toast.error('Failed to place order. Please try again.');
-      } finally {
-        setIsProcessing(false);
-      }
+      if (error) throw error;
+      if (!order) throw new Error('Failed to create order');
+
+      dispatch(clearCart());
+      setPlacedOrderId(order.id);
+      setSuccessDialogOpen(true);
+    } catch (error) {
+      console.error('Order error:', error);
+      toast.error('Failed to place order. Please try again.');
+    } finally {
+      setIsProcessing(false);
     }
-  }
+  };
 
   return (
     <div className="bg-white p-6 rounded-lg border border-gray-200">
@@ -197,7 +212,7 @@ export function PaymentForm({ onNext, totalAmount }: PaymentFormProps) {
                 </AlertDescription>
               </Alert>
 
-              <FormField
+              {/* <FormField
                 control={form.control}
                 name="changeNeeded"
                 render={({ field }) => (
@@ -213,7 +228,7 @@ export function PaymentForm({ onNext, totalAmount }: PaymentFormProps) {
                     <FormMessage />
                   </FormItem>
                 )}
-              />
+              /> */}
 
               <Button
                 type="submit"
@@ -236,6 +251,40 @@ export function PaymentForm({ onNext, totalAmount }: PaymentFormProps) {
           )}
         </form>
       </Form>
+
+      {/* Success Dialog */}
+      <Dialog open={successDialogOpen} onOpenChange={setSuccessDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CheckCircle2 className="h-6 w-6 text-green-500" />
+              Order Placed Successfully!
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-gray-600">
+              Thank you for your order. We'll start processing it right away.
+            </p>
+            <div className="flex justify-end gap-3">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setSuccessDialogOpen(false);
+                  router.push('/shop');
+                }}>
+                Continue Shopping
+              </Button>
+              <Button
+                onClick={() => {
+                  setSuccessDialogOpen(false);
+                  router.push(`/orders/${placedOrderId}`);
+                }}>
+                View Order
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

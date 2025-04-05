@@ -73,6 +73,13 @@ export default async function RootLayout({
   if (useMinimalLayout) {
     return (
       <html lang="en" className="h-full">
+        <head>
+          <link
+            href="https://api.mapbox.com/mapbox-gl-js/v2.8.1/mapbox-gl.css"
+            rel="stylesheet"
+          />
+          <script src="https://api.mapbox.com/mapbox-gl-js/v2.8.1/mapbox-gl.js"></script>
+        </head>
         <body className={`${satoshi.className} h-full antialiased`}>
           <HolyLoader color="#868686" />
           <Providers>{children}</Providers>
@@ -84,6 +91,13 @@ export default async function RootLayout({
 
   return (
     <html lang="en">
+      <head>
+        <link
+          href="https://api.mapbox.com/mapbox-gl-js/v2.8.1/mapbox-gl.css"
+          rel="stylesheet"
+        />
+        <script src="https://api.mapbox.com/mapbox-gl-js/v2.8.1/mapbox-gl.js"></script>
+      </head>
       <body className={satoshi.className}>
         <HolyLoader color="#868686" />
         <Providers>

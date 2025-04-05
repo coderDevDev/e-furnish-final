@@ -1,10 +1,10 @@
-import React from "react";
-import Rating from "../ui/Rating";
-import { IoEllipsisHorizontal } from "react-icons/io5";
-import { Button } from "../ui/button";
-import { IoIosCheckmarkCircle } from "react-icons/io";
-import { Review } from "@/types/review.types";
-import { cn } from "@/lib/utils";
+import React from 'react';
+import Rating from '../ui/Rating';
+import { IoEllipsisHorizontal } from 'react-icons/io5';
+import { Button } from '../ui/button';
+import { IoIosCheckmarkCircle } from 'react-icons/io';
+import { Review } from '@/types/review.types';
+import { cn } from '@/lib/utils';
 
 type ReviewCardProps = {
   blurChild?: React.ReactNode;
@@ -19,15 +19,14 @@ const ReviewCard = ({
   isAction = false,
   isDate = false,
   data,
-  className,
+  className
 }: ReviewCardProps) => {
   return (
     <div
       className={cn([
-        "relative bg-white flex flex-col items-start aspect-auto border border-black/10 rounded-[20px] p-6 sm:px-8 sm:py-7 overflow-hidden",
-        className,
-      ])}
-    >
+        'relative bg-white flex flex-col items-start aspect-auto border border-black/10 rounded-[20px] p-6 sm:px-8 sm:py-7 overflow-hidden',
+        className
+      ])}>
       {blurChild && blurChild}
       <div className="w-full flex items-center justify-between mb-3 sm:mb-4">
         <Rating
@@ -50,7 +49,14 @@ const ReviewCard = ({
       <p className="text-sm sm:text-base text-black/60">{data.content}</p>
       {isDate && (
         <p className="text-black/60 text-sm font-medium mt-4 sm:mt-6">
-          Posted on {data.date}
+          Posted on{' '}
+          {new Date(data.date).toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+          })}
         </p>
       )}
     </div>

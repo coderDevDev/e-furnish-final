@@ -32,7 +32,7 @@ export default async function ProductPage({
           <section className="mb-11">
             <Header data={productData} />
           </section>
-          <Tabs />
+          <Tabs productId={params.slug[0]} />
         </div>
         <div className="mb-[50px] sm:mb-20">
           <ProductListSec

@@ -171,118 +171,22 @@ export const authService = {
     if (error) throw error;
   },
 
-  createOrder: async (orderData: OrderData) => {
+  async createOrder(orderData: any) {
     const supabase = createClientComponentClient();
 
     try {
-      // Start a Supabase transaction
-      const { data: order, error: orderError } = await supabase
+      const { data, error } = await supabase
         .from('orders')
-        .insert([
-          {
-            user_id: orderData.user_id,
-            total_amount: orderData.total_amount,
-            payment_method: orderData.payment_method,
-            payment_status: orderData.payment_status,
-            shipping_address: orderData.shipping_address
-          }
-        ])
-        .select()
+        .insert([orderData])
+        .select('*')
         .single();
 
-      if (orderError) throw orderError;
+      if (error) throw error;
 
-      // Insert order items
-      const orderItems = orderData.items.map(item => ({
-        order_id: order.id,
-        product_id: item.product_id,
-        quantity: item.quantity,
-        price: item.price,
-        customization: item.customization
-      }));
-
-      const { error: itemsError } = await supabase
-        .from('order_items')
-        .insert(orderItems);
-
-      if (itemsError) throw itemsError;
-
-      // Update product stock levels
-      for (const item of orderData.items) {
-        // First get current stock
-        const { data: product, error: stockError } = await supabase
-          .from('products')
-          .select('stock')
-          .eq('id', item.product_id)
-          .single();
-
-        if (stockError) throw stockError;
-
-        // Calculate new stock level
-        const newStock = product.stock - item.quantity;
-
-        // Update stock
-        const { error: updateError } = await supabase
-          .from('products')
-          .update({ stock: newStock })
-          .eq('id', item.product_id);
-
-        if (updateError) throw updateError;
-      }
-
-      // Fetch user details for the email
-      const { data: userProfile } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', orderData.user_id)
-        .single();
-
-      // Fetch product details for the email
-      const productIds = orderData.items.map(item => item.product_id);
-      const { data: products } = await supabase
-        .from('products')
-        .select('*')
-        .in('id', productIds);
-
-      // Calculate estimated delivery date (5 business days from now)
-      const estimatedDeliveryDate = addBusinessDays(new Date(), 5);
-
-      // Prepare order summary for email
-      const orderSummary = orderData.items.map(item => {
-        const product = products?.find(p => p.id === item.product_id);
-        return {
-          name: product?.title || 'Product',
-          quantity: item.quantity,
-          price: item.price,
-          customization: item.customization
-        };
-      });
-
-      // Send order confirmation email via API route
-      const emailData = {
-        order,
-        userProfile,
-        orderSummary,
-        shippingAddress: orderData.shipping_address,
-        estimatedDeliveryDate
-      };
-
-      const response = await fetch('/api/send-order-confirmation', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(emailData)
-      });
-
-      if (!response.ok) {
-        console.error('Failed to send order confirmation email');
-      }
-
-      return order;
+      return { data, error: null };
     } catch (error) {
       console.error('Error creating order:', error);
-      throw error;
+      return { data: null, error };
     }
   },
 

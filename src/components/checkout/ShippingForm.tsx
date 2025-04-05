@@ -17,6 +17,8 @@ import { useEffect, useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { authService } from '@/lib/services/authService';
 import { toast } from 'sonner';
+import { useAppDispatch } from '@/lib/hooks/redux';
+import { setDeliveryAddress } from '@/lib/features/checkout/checkoutSlice';
 
 import {
   locationService,
@@ -67,6 +69,7 @@ const formSchema = z.object({
 type ShippingFormValues = z.infer<typeof formSchema>;
 
 export function ShippingForm({ onNext }: { onNext: () => void }) {
+  const dispatch = useAppDispatch();
   const [isLoading, setIsLoading] = useState(true);
   const [regions, setRegions] = useState<Region[]>([]);
   const [provinces, setProvinces] = useState<Province[]>([]);
@@ -175,6 +178,19 @@ export function ShippingForm({ onNext }: { onNext: () => void }) {
             zip_code: string;
           };
 
+          if (address) {
+            // Construct full address string and dispatch immediately
+            const fullAddress = `${address.street}, ${address.barangay_name}, ${address.city_name}, ${address.province_name}, ${address.region_name}, ${address.zip_code}`;
+
+            dispatch(
+              setDeliveryAddress({
+                address: fullAddress,
+                lat: 0,
+                lng: 0
+              })
+            );
+          }
+
           form.reset({
             fullName: profile?.full_name || '',
             email: user.email || '',
@@ -196,34 +212,44 @@ export function ShippingForm({ onNext }: { onNext: () => void }) {
     };
 
     loadUserProfile();
-  }, [form]);
+  }, [dispatch, form]);
 
   async function onSubmit(values: ShippingFormValues) {
     try {
-      // Get the names for each location code
       const region = regions.find(r => r.id === values.region);
       const province = provinces.find(p => p.id === values.province);
       const city = cities.find(c => c.id === values.city);
       const barangay = barangays.find(b => b.id === values.barangay);
 
-      const address = {
-        street: values.street,
-        region_id: values.region,
-        region_name: region?.name || '',
-        province_id: values.province,
-        province_name: province?.name || '',
-        city_id: values.city,
-        city_name: city?.name || '',
-        barangay_id: values.barangay,
-        barangay_name: barangay?.name || '',
-        zip_code: values.zipCode
-      };
+      // Construct full address string
+      const fullAddress = `${values.street}, ${barangay?.name}, ${city?.name}, ${province?.name}, ${region?.name}, ${values.zipCode}`;
 
+      // Update profile in Supabase
       await authService.updateUserProfile({
         full_name: values.fullName,
         phone: values.phone,
-        address
-      });
+        address: {
+          street: values.street,
+          region_id: values.region,
+          region_name: region?.name || '',
+          province_id: values.province,
+          province_name: province?.name || '',
+          city_id: values.city,
+          city_name: city?.name || '',
+          barangay_id: values.barangay,
+          barangay_name: barangay?.name || '',
+          zip_code: values.zipCode
+        }
+      } as any); // Using 'any' to bypass the type error temporarily
+
+      // Dispatch address to Redux store
+      dispatch(
+        setDeliveryAddress({
+          address: fullAddress,
+          lat: 0,
+          lng: 0
+        })
+      );
 
       toast.success('Shipping information updated');
       onNext();

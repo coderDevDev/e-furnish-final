@@ -24,12 +24,50 @@ export default function LoginPage() {
   // Debounce the email and password to prevent rapid API calls
   const debouncedEmail = useDebounce(email, 500);
   const debouncedPassword = useDebounce(password, 500);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [showLoginForm, setShowLoginForm] = useState(false);
 
   useEffect(() => {
     if (message) {
       toast.success(message);
     }
   }, [message]);
+
+  useEffect(() => {
+    const checkSession = async () => {
+      const {
+        data: { session },
+        error
+      } = await supabase.auth.getSession();
+
+      console.log({ session });
+      if (session) {
+        // Get the user's role
+        const { data: userData } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', session.user.id)
+          .single();
+
+        console.log({ userData });
+        // Redirect based on role
+        if (userData?.role === 'admin') {
+          setIsLoggedIn(true);
+          window.location.href = '/admin';
+        } else if (userData?.role === 'supplier') {
+          setIsLoggedIn(true);
+          window.location.href = '/supplier';
+        } else {
+          setIsLoggedIn(true);
+          window.location.href = '/';
+        }
+      } else {
+        setIsLoggedIn(false);
+      }
+    };
+
+    checkSession();
+  }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,15 +90,11 @@ export default function LoginPage() {
         return;
       }
 
-      const isAdmin = ['admin@gmail.com', 'efurnish.03@gmail.com'].includes(
-        email
-      );
-
-      console.log({ data });
+      // Get user role from profiles table
       const { data: userData, error: roleError } = await supabase
-        .from('profiles') // Assuming you have a 'users' table
-        .select('role') // Adjust the field name as necessary
-        .eq('id', data?.user?.id) // Use user ID to fetch role
+        .from('profiles')
+        .select('role')
+        .eq('id', data?.user?.id)
         .single();
 
       if (roleError) {
@@ -68,16 +102,22 @@ export default function LoginPage() {
         return;
       }
 
-      const userRole = userData?.role; // Assuming 'role' is the field name
-
-      console.log({ userRole });
+      // Check if selected role matches the user's actual role
+      if (userData?.role !== role) {
+        toast.error(
+          `Invalid role selected. You are a ${userData?.role}, not a ${role}.`
+        );
+        // Sign out the user since role doesn't match
+        await supabase.auth.signOut();
+        return;
+      }
 
       if (data.session) {
         toast.success('Logged in successfully');
 
-        if (userRole === 'admin') {
+        if (userData.role === 'admin') {
           window.location.href = '/admin';
-        } else if (userRole === 'supplier') {
+        } else if (userData.role === 'supplier') {
           window.location.href = '/supplier';
         } else {
           window.location.href = '/';
@@ -147,120 +187,160 @@ export default function LoginPage() {
     }
   };
 
-  return (
+  // Handler for when role is selected
+  const handleRoleSelect = (selectedRole: 'user' | 'supplier' | 'admin') => {
+    setRole(selectedRole);
+    setShowLoginForm(true);
+  };
+
+  return isLoggedIn === false ? (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-3xl w-full space-y-8">
         <div className="text-center">
           <h2 className="mt-6 text-3xl font-bold text-gray-900">
-            Sign in to your account
+            Welcome to eFurnish
           </h2>
           <p className="mt-2 text-sm text-gray-600">
-            Select your role to continue
+            Please select your role to continue
           </p>
         </div>
 
-        <RoleSelector onSelect={setRole} selectedRole={role} />
-
-        <div className="mt-8 bg-white py-8 px-4 shadow-xl sm:rounded-lg sm:px-10">
-          <div className="mb-6 text-center">
-            <h1 className="text-2xl font-semibold text-slate-900">Login</h1>
-            {/* <p className="mt-2 text-sm text-slate-600">
-              Sign in to access the system
-            </p> */}
+        {!showLoginForm ? (
+          // Show only role selector initially
+          <div className="mt-8 bg-white py-8 px-4 shadow-xl sm:rounded-lg sm:px-10">
+            <RoleSelector onSelect={handleRoleSelect} selectedRole={role} />
           </div>
-          <form onSubmit={handleLogin} className="space-y-4">
-            <div>
-              <label
-                htmlFor="email"
-                className="block text-sm font-medium text-slate-700">
-                Email
-              </label>
-              <input
-                id="email"
-                type="email"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                className="mt-1 w-full rounded-xl border border-slate-200 px-4 py-2 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-                placeholder="Enter your email"
-                disabled={loading}
-                required
-              />
+        ) : (
+          // Show login form after role is selected
+          <>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={() => setShowLoginForm(false)}
+                  className="text-primary hover:text-primary/80 text-sm flex items-center">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="mr-1">
+                    <path d="M19 12H5M12 19l-7-7 7-7" />
+                  </svg>
+                  Change Role
+                </button>
+              </div>
+              <div className="text-sm">
+                Selected Role:{' '}
+                <span className="font-medium capitalize">{role}</span>
+              </div>
             </div>
 
-            <div>
-              <label
-                htmlFor="password"
-                className="block text-sm font-medium text-slate-700">
-                Password
-              </label>
-              <input
-                id="password"
-                type="password"
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                className="mt-1 w-full rounded-xl border border-slate-200 px-4 py-2 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-                placeholder="Enter your password"
-                disabled={loading}
-                required
-              />
+            <div className="mt-4 bg-white py-8 px-4 shadow-xl sm:rounded-lg sm:px-10">
+              <div className="mb-6 text-center">
+                <h1 className="text-2xl font-semibold text-slate-900">Login</h1>
+              </div>
+
+              <form onSubmit={handleLogin} className="space-y-4">
+                <div>
+                  <label
+                    htmlFor="email"
+                    className="block text-sm font-medium text-slate-700">
+                    Email
+                  </label>
+                  <input
+                    id="email"
+                    type="email"
+                    value={email}
+                    onChange={e => setEmail(e.target.value)}
+                    className="mt-1 w-full rounded-xl border border-slate-200 px-4 py-2 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                    placeholder="Enter your email"
+                    disabled={loading}
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="password"
+                    className="block text-sm font-medium text-slate-700">
+                    Password
+                  </label>
+                  <input
+                    id="password"
+                    type="password"
+                    value={password}
+                    onChange={e => setPassword(e.target.value)}
+                    className="mt-1 w-full rounded-xl border border-slate-200 px-4 py-2 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                    placeholder="Enter your password"
+                    disabled={loading}
+                    required
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full rounded-xl bg-primary py-2 text-white hover:bg-primary/90 disabled:bg-primary/50">
+                  {loading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin inline" />
+                      <span>Signing in...</span>
+                    </>
+                  ) : (
+                    'Sign in'
+                  )}
+                </button>
+              </form>
+
+              <div className="relative my-6">
+                <div className="absolute inset-0 flex items-center">
+                  <Separator />
+                </div>
+                <div className="relative flex justify-center text-sm">
+                  <span className="bg-white px-2 text-gray-500">
+                    Or continue with
+                  </span>
+                </div>
+              </div>
+
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full mb-4"
+                onClick={handleGoogleLogin}
+                disabled={googleLoading || loading}>
+                {googleLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    <span>Connecting to Google...</span>
+                  </>
+                ) : (
+                  <>
+                    <FcGoogle className="mr-2 h-5 w-5" />
+                    <span>Sign in with Google</span>
+                  </>
+                )}
+              </Button>
             </div>
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full rounded-xl bg-primary py-2 text-white hover:bg-primary/90 disabled:bg-primary/50">
-              {loading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin inline" />
-                  <span>Signing in...</span>
-                </>
-              ) : (
-                'Sign in'
-              )}
-            </button>
-          </form>
-
-          <div className="relative my-6">
-            <div className="absolute inset-0 flex items-center">
-              <Separator />
-            </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="bg-white px-2 text-gray-500">
-                Or continue with
-              </span>
-            </div>
-          </div>
-
-          {/* Google Sign In Button */}
-          <Button
-            type="button"
-            variant="outline"
-            className="w-full mb-4"
-            onClick={handleGoogleLogin}
-            disabled={googleLoading || loading}>
-            {googleLoading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                <span>Connecting to Google...</span>
-              </>
-            ) : (
-              <>
-                <FcGoogle className="mr-2 h-5 w-5" />
-                <span>Sign in with Google</span>
-              </>
-            )}
-          </Button>
-        </div>
-
-        <p className="text-center text-sm text-gray-600">
-          Don't have an account?{' '}
-          <a
-            href={`/register?role=${role}`}
-            className="font-medium text-primary hover:text-primary/80">
-            Register here
-          </a>
-        </p>
+            <p className="text-center text-sm text-gray-600">
+              Don't have an account?{' '}
+              <a
+                href={`/register?role=${role}`}
+                className="font-medium text-primary hover:text-primary/80">
+                Register here
+              </a>
+            </p>
+          </>
+        )}
       </div>
     </div>
+  ) : (
+    <div></div>
   );
 }
