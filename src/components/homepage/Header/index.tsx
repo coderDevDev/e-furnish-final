@@ -44,7 +44,7 @@ const Header = () => {
               Shop Now
             </Link>
           </motion.div>
-          <motion.div
+          {/* <motion.div
             initial={{ y: '100px', opacity: 0 }}
             whileInView={{ y: '0', opacity: 1 }}
             viewport={{ once: true }}
@@ -82,7 +82,7 @@ const Header = () => {
                 Happy Customers
               </span>
             </div>
-          </motion.div>
+          </motion.div> */}
         </section>
         <motion.section
           initial={{ y: '100px', opacity: 0, rotate: 10 }}

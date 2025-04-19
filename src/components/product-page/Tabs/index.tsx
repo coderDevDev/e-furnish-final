@@ -21,11 +21,11 @@ const tabBtnData: TabBtn[] = [
   {
     id: 2,
     label: 'Rating & Reviews'
-  },
-  {
-    id: 3,
-    label: 'FAQs'
   }
+  // {
+  //   id: 3,
+  //   label: 'FAQs'
+  // }
 ];
 
 interface TabsProps {
@@ -59,7 +59,7 @@ const Tabs = ({ productId }: TabsProps) => {
         ))}
       </div>
       <div className="mb-12 sm:mb-16">
-        {active === 1 && <ProductDetailsContent />}
+        {active === 1 && <ProductDetailsContent productId={productId} />}
         {active === 2 && <ReviewsContent productId={productId} />}
         {active === 3 && <FaqContent />}
       </div>

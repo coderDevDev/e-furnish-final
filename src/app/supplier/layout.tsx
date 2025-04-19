@@ -50,9 +50,37 @@ export default function SupplierLayout({
   children: React.ReactNode;
 }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [fullName, setFullName] = useState<string>('');
+  const [userRole, setUserRole] = useState<string>('');
   const pathname = usePathname();
   const router = useRouter();
   const supabase = createClientComponentClient();
+
+  useEffect(() => {
+    const checkSession = async () => {
+      const {
+        data: { session }
+      } = await supabase.auth.getSession();
+      if (!session) {
+        router.push('/login');
+        return;
+      }
+
+      // Fetch user profile for navbar
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', session.user.id)
+        .single();
+
+      if (profile) {
+        setFullName(profile.full_name || '');
+        setUserRole(profile.role || 'Supplier');
+      }
+    };
+
+    checkSession();
+  }, [router]);
 
   const handleLogout = async () => {
     try {
@@ -65,21 +93,25 @@ export default function SupplierLayout({
     }
   };
 
-  useEffect(() => {
-    const checkSession = async () => {
-      const {
-        data: { session }
-      } = await supabase.auth.getSession();
-      if (!session) {
-        router.push('/login');
-      }
-    };
-
-    checkSession();
-  }, [router]);
-
   return (
-    <div className="flex h-screen bg-slate-50">
+    <div className="">
+      <nav className="bg-[#B08968] text-white h-16 flex items-center justify-between px-6 shadow-md">
+        <div className="text-lg font-semibold capitalize">
+          {pathname.split('/').pop()?.replace(/-/g, ' ') || 'Dashboard'}
+        </div>
+
+        {/* User Info */}
+        <div className="flex items-center space-x-2">
+          <div className="text-sm text-white text-right">
+            <div className="font-medium">{fullName}</div>
+            <div className="text-xs opacity-80">{userRole}</div>
+          </div>
+          <div className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center font-bold uppercase">
+            {fullName?.charAt(0) || 'S'} {fullName?.charAt(1)}
+          </div>
+        </div>
+      </nav>
+
       <aside
         className={cn(
           'fixed left-0 top-0 z-40 h-full bg-white transition-all duration-300',

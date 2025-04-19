@@ -90,7 +90,16 @@ export default function RegisterPage() {
     const fetchRegions = async () => {
       try {
         const data = await locationService.getRegions();
-        setRegions(data);
+        console.log({ data });
+
+        // Filter to only include Luzon regions by their ID
+        const luzonRegionIds = ['01', '02', '03', '04', '05', '13', '14', '17'];
+
+        const luzonRegions = data.filter(region =>
+          luzonRegionIds.includes(region.id)
+        );
+
+        setRegions(luzonRegions);
       } catch (error) {
         console.error('Error fetching regions:', error);
         toast.error('Failed to load regions');
@@ -388,6 +397,10 @@ export default function RegisterPage() {
                       {errors.address.region_id.message}
                     </p>
                   )}
+                  <p className="text-xs text-amber-600">
+                    Note: Our service is currently available only in Luzon
+                    (Regions 1-5 and NCR).
+                  </p>
                 </div>
 
                 <div className="space-y-2">

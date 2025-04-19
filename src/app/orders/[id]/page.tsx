@@ -211,12 +211,12 @@ export default function OrderDetailsPage({ params }: OrderDetailsProps) {
         </div>
 
         {/* Actions */}
-        <div className="flex justify-end space-x-4">
+        {/* <div className="flex justify-end space-x-4">
           <Button variant="outline" asChild>
             <Link href="/orders">Back to Orders</Link>
           </Button>
           <Button>Track Order</Button>
-        </div>
+        </div> */}
       </div>
     </main>
   );

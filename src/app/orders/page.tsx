@@ -86,7 +86,7 @@ export default function OrdersPage() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
         <div>
           <h1 className="text-2xl font-bold mb-1">My Orders</h1>
-          <p className="text-gray-600">Track and manage your orders</p>
+          <p className="text-gray-600">Manage your orders</p>
         </div>
         <Select value={filter} onValueChange={setFilter}>
           <SelectTrigger className="w-[180px]">
@@ -102,6 +102,7 @@ export default function OrdersPage() {
         </Select>
       </div>
 
+      {console.log({ filteredOrders })}
       <div className="grid gap-6">
         {filteredOrders.map(order => (
           <a

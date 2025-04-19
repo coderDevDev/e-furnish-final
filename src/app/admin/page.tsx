@@ -5,7 +5,6 @@ import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import {
   Users,
   Package,
-  DollarSign,
   PackageSearch,
   ShoppingCart,
   TrendingUp,
@@ -13,7 +12,8 @@ import {
   Loader2,
   CheckCircle,
   Clock,
-  XCircle
+  XCircle,
+  PhilippinePeso
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Bar, Line, Pie } from 'react-chartjs-2';
@@ -253,7 +253,7 @@ export default function AdminPage() {
     {
       label: 'Total Revenue',
       value: `₱${stats.totalRevenue.toLocaleString()}`,
-      icon: DollarSign,
+      icon: PhilippinePeso,
       change: '',
       color: 'bg-green-50 text-green-700'
     },
@@ -303,190 +303,187 @@ export default function AdminPage() {
     }
   ];
 
-  if (loading) {
-    return (
-      <div className="flex h-[80vh] items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="mx-auto h-12 w-12 animate-spin text-primary" />
-          <p className="mt-4 text-lg font-medium text-gray-600">
-            Loading dashboard data...
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="flex h-[80vh] items-center justify-center">
-        <div className="text-center">
-          <AlertCircle className="mx-auto h-12 w-12 text-red-500" />
-          <p className="mt-4 text-lg font-medium text-gray-600">{error}</p>
-          <button
-            onClick={() => window.location.reload()}
-            className="mt-4 rounded-md bg-primary px-4 py-2 text-white">
-            Try Again
-          </button>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-semibold">Dashboard</h1>
+      {/* IMPORTANT: Remove any NavBar, Header, Admin header components from here */}
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-        {dashboardStats.map(stat => (
-          <Card
-            key={stat.label}
-            className={`overflow-hidden border-none ${stat.color}`}>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium opacity-80">{stat.label}</p>
-                  <p className="mt-2 text-3xl font-semibold">{stat.value}</p>
-                  {stat.change && (
-                    <p className={`mt-1 text-sm font-medium`}>{stat.change}</p>
+      {/* Just start directly with your dashboard content */}
+      {loading ? (
+        <div className="flex h-96 items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      ) : error ? (
+        <div className="flex h-96 items-center justify-center">
+          <p className="text-red-500">{error}</p>
+        </div>
+      ) : (
+        // Your dashboard content...
+        <div>
+          <h1 className="text-2xl font-bold mb-6">Dashboard Overview</h1>
+          {/* Stats Grid */}
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            {dashboardStats.map(stat => (
+              <Card
+                key={stat.label}
+                className={`overflow-hidden border-none ${stat.color}`}>
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium opacity-80">
+                        {stat.label}
+                      </p>
+                      <p className="mt-2 text-3xl font-semibold">
+                        {stat.value}
+                      </p>
+                      {stat.change && (
+                        <p className={`mt-1 text-sm font-medium`}>
+                          {stat.change}
+                        </p>
+                      )}
+                    </div>
+                    <div className="rounded-full p-3">
+                      <stat.icon size={24} />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          {/* Charts */}
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+            <Card>
+              <CardContent className="p-6">
+                <h2 className="mb-4 text-lg font-semibold">
+                  Revenue (Last 7 Days)
+                </h2>
+                <div className="h-80">
+                  <Line
+                    data={salesChartData}
+                    options={{
+                      responsive: true,
+                      maintainAspectRatio: false,
+                      scales: {
+                        y: {
+                          beginAtZero: true,
+                          ticks: {
+                            callback: value => `₱${value}`
+                          }
+                        }
+                      }
+                    }}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="p-6">
+                <h2 className="mb-4 text-lg font-semibold">
+                  Orders (Last 7 Days)
+                </h2>
+                <div className="h-80">
+                  <Bar
+                    data={ordersChartData}
+                    options={{
+                      responsive: true,
+                      maintainAspectRatio: false
+                    }}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+            {/* Order Status Chart */}
+            <Card>
+              <CardContent className="p-6">
+                <h2 className="mb-4 text-lg font-semibold">
+                  Order Status Distribution
+                </h2>
+                <div className="h-64 flex items-center justify-center">
+                  {orderStatusData.pending === 0 &&
+                  orderStatusData.processing === 0 &&
+                  orderStatusData.completed === 0 &&
+                  orderStatusData.cancelled === 0 ? (
+                    <p className="text-gray-500">No order data available</p>
+                  ) : (
+                    <Pie
+                      data={orderStatusChartData}
+                      options={{
+                        responsive: true,
+                        maintainAspectRatio: false
+                      }}
+                    />
                   )}
                 </div>
-                <div className="rounded-full p-3">
-                  <stat.icon size={24} />
+              </CardContent>
+            </Card>
+
+            {/* Recent Orders */}
+            <Card className="lg:col-span-2">
+              <CardContent className="p-6">
+                <h2 className="mb-4 text-lg font-semibold">Recent Orders</h2>
+                <div className="overflow-x-auto">
+                  {recentOrders.length === 0 ? (
+                    <p className="py-8 text-center text-gray-500">
+                      No recent orders
+                    </p>
+                  ) : (
+                    <table className="w-full table-auto">
+                      <thead>
+                        <tr className="border-b text-left text-sm font-medium text-gray-500">
+                          <th className="pb-2">Order ID</th>
+                          <th className="pb-2">Customer</th>
+                          <th className="pb-2">Amount</th>
+                          <th className="pb-2">Status</th>
+                          <th className="pb-2">Date</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {recentOrders.map(order => (
+                          <tr key={order.id} className="border-b text-sm">
+                            <td className="py-3 font-medium">#{order.id}</td>
+                            <td className="py-3">
+                              {order.profiles?.full_name || 'Unknown'}
+                            </td>
+                            <td className="py-3">
+                              ₱{order.total_amount?.toLocaleString()}
+                            </td>
+                            <td className="py-3">
+                              <span
+                                className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${
+                                  order.status === 'completed'
+                                    ? 'bg-green-100 text-green-800'
+                                    : order.status === 'pending'
+                                    ? 'bg-yellow-100 text-yellow-800'
+                                    : order.status === 'processing'
+                                    ? 'bg-blue-100 text-blue-800'
+                                    : 'bg-red-100 text-red-800'
+                                }`}>
+                                {order.status}
+                              </span>
+                            </td>
+                            <td className="py-3">
+                              {order.created_at
+                                ? format(
+                                    new Date(order.created_at),
+                                    'MMM dd, yyyy'
+                                  )
+                                : '-'}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      {/* Charts */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <Card>
-          <CardContent className="p-6">
-            <h2 className="mb-4 text-lg font-semibold">
-              Revenue (Last 7 Days)
-            </h2>
-            <div className="h-80">
-              <Line
-                data={salesChartData}
-                options={{
-                  responsive: true,
-                  maintainAspectRatio: false,
-                  scales: {
-                    y: {
-                      beginAtZero: true,
-                      ticks: {
-                        callback: value => `₱${value}`
-                      }
-                    }
-                  }
-                }}
-              />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-6">
-            <h2 className="mb-4 text-lg font-semibold">Orders (Last 7 Days)</h2>
-            <div className="h-80">
-              <Bar
-                data={ordersChartData}
-                options={{
-                  responsive: true,
-                  maintainAspectRatio: false
-                }}
-              />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        {/* Order Status Chart */}
-        <Card>
-          <CardContent className="p-6">
-            <h2 className="mb-4 text-lg font-semibold">
-              Order Status Distribution
-            </h2>
-            <div className="h-64 flex items-center justify-center">
-              {orderStatusData.pending === 0 &&
-              orderStatusData.processing === 0 &&
-              orderStatusData.completed === 0 &&
-              orderStatusData.cancelled === 0 ? (
-                <p className="text-gray-500">No order data available</p>
-              ) : (
-                <Pie
-                  data={orderStatusChartData}
-                  options={{
-                    responsive: true,
-                    maintainAspectRatio: false
-                  }}
-                />
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Recent Orders */}
-        <Card className="lg:col-span-2">
-          <CardContent className="p-6">
-            <h2 className="mb-4 text-lg font-semibold">Recent Orders</h2>
-            <div className="overflow-x-auto">
-              {recentOrders.length === 0 ? (
-                <p className="py-8 text-center text-gray-500">
-                  No recent orders
-                </p>
-              ) : (
-                <table className="w-full table-auto">
-                  <thead>
-                    <tr className="border-b text-left text-sm font-medium text-gray-500">
-                      <th className="pb-2">Order ID</th>
-                      <th className="pb-2">Customer</th>
-                      <th className="pb-2">Amount</th>
-                      <th className="pb-2">Status</th>
-                      <th className="pb-2">Date</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {recentOrders.map(order => (
-                      <tr key={order.id} className="border-b text-sm">
-                        <td className="py-3 font-medium">#{order.id}</td>
-                        <td className="py-3">
-                          {order.profiles?.full_name || 'Unknown'}
-                        </td>
-                        <td className="py-3">
-                          ₱{order.total_amount?.toLocaleString()}
-                        </td>
-                        <td className="py-3">
-                          <span
-                            className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${
-                              order.status === 'completed'
-                                ? 'bg-green-100 text-green-800'
-                                : order.status === 'pending'
-                                ? 'bg-yellow-100 text-yellow-800'
-                                : order.status === 'processing'
-                                ? 'bg-blue-100 text-blue-800'
-                                : 'bg-red-100 text-red-800'
-                            }`}>
-                            {order.status}
-                          </span>
-                        </td>
-                        <td className="py-3">
-                          {order.created_at
-                            ? format(new Date(order.created_at), 'MMM dd, yyyy')
-                            : '-'}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

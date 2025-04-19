@@ -1,4 +1,8 @@
-import React from 'react';
+'use client';
+
+import React, { useEffect, useState } from 'react';
+import { productService } from '@/lib/services/productService';
+import { Product } from '@/types/product.types';
 
 export type SpecItem = {
   label: string;
@@ -24,23 +28,26 @@ const specsData: SpecItem[] = [
   }
 ];
 
-const ProductDetails = () => {
+const ProductDetails = ({ productId }: { productId: string }) => {
+  const [product, setProduct] = useState<Product | null>(null);
+
+  useEffect(() => {
+    const fetchProduct = async () => {
+      const product = await productService.getProduct(productId);
+      setProduct(product);
+    };
+    fetchProduct();
+  }, [productId]);
+  let description = product?.description;
+  if (description && description.length > 100) {
+    description = description.substring(0, 100) + '...';
+  }
   return (
     <>
-      {specsData.map((item, i) => (
-        <div className="grid grid-cols-3" key={i}>
-          <div>
-            <p className="text-sm py-3 w-full leading-7 lg:py-4 pr-2 text-neutral-500">
-              {item.label}
-            </p>
-          </div>
-          <div className="col-span-2 py-3 lg:py-4 border-b">
-            <p className="text-sm w-full leading-7 text-neutral-800 font-medium">
-              {item.value}
-            </p>
-          </div>
-        </div>
-      ))}
+      <div className="flex flex-col gap-4">
+        <h2 className="text-2xl font-bold">{product?.name}</h2>
+        <p className="text-sm text-gray-500">{description}</p>
+      </div>
     </>
   );
 };

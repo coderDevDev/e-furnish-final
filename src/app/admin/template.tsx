@@ -2,7 +2,7 @@
 
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import React, { useState, useEffect } from 'react';
 import {
   RiDashboardLine,
@@ -18,6 +18,7 @@ import { FiMenu } from 'react-icons/fi';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { toast } from 'sonner';
 import { ListOrderedIcon } from 'lucide-react';
+import { AdminNavbar } from '@/components/admin/AdminNavbar';
 
 const adminLinks = [
   {
@@ -41,7 +42,7 @@ const adminLinks = [
     icon: RiUser3Line
   },
   {
-    label: 'Settings',
+    label: 'Shipping Settings',
     href: '/admin/settings',
     icon: RiSettings4Line
   }
@@ -49,7 +50,7 @@ const adminLinks = [
 
 const supplierLinks = [
   {
-    label: 'Supplier Offers',
+    label: 'Supplier Settings',
     href: '/admin/inventory-supplier',
     icon: MdInventory2
   }
@@ -98,6 +99,8 @@ export default function AdminTemplate({
   }, [supabase]);
 
   const links = role === 'admin' ? adminLinks : supplierLinks;
+
+  const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
 
   const handleLogout = async () => {
     try {
@@ -162,12 +165,15 @@ export default function AdminTemplate({
           </div>
         </div>
       </aside>
+
       <main
         className={cn(
           'flex-1 overflow-x-hidden transition-all duration-300',
           isSidebarOpen ? 'ml-40' : 'ml-20'
         )}>
-        <div className="px-5 py-4">{children}</div>
+        {/* Content Container */}
+
+        <div className="container mx-auto px-4 py-6">{children}</div>
       </main>
     </div>
   );

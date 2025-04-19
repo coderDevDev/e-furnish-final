@@ -46,13 +46,40 @@ export default async function AdminLayout({
   children: React.ReactNode;
 }) {
   const isAdmin = await checkAdminAccess();
+  const supabase = createServerComponentClient({ cookies });
+  const {
+    data: { session }
+  } = await supabase.auth.getSession();
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', session?.user.id)
+    .single();
 
   if (!isAdmin) {
     redirect('/login');
   }
 
+  let fullName = profile?.full_name;
+  let role = profile?.role;
   return (
     <>
+      {/* ✅ Navbar should be here ONLY ONCE */}
+      <nav className="bg-[#B08968] text-white h-16 flex items-center justify-between px-6 shadow-md">
+        <div className="text-lg font-semibold">Dashboard</div>
+
+        {/* User Info */}
+        <div className="flex items-center space-x-2">
+          <div className="text-sm text-white text-right">
+            <div className="font-medium">{fullName}</div>
+            <div className="text-xs opacity-80">{role}</div>
+          </div>
+          <div className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center font-bold uppercase">
+            {fullName?.charAt(0)} {fullName?.charAt(1)}
+          </div>
+        </div>
+      </nav>
+
       <AdminTemplate>{children}</AdminTemplate>
       <Toaster position="top-right" richColors />
     </>
