@@ -11,6 +11,11 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
+import {
+  calculateShippingCost,
+  FIRST_DISTRICT_MUNICIPALITIES
+} from '@/lib/utils/shipping';
+import { InfoCircledIcon } from '@radix-ui/react-icons';
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -32,6 +37,25 @@ export default function CheckoutPage() {
       toast.success('Order placed successfully!');
       router.push('/thank-you');
     }
+  };
+
+  const getOrderSummary = () => {
+    // Calculate subtotal from cart items
+    const subtotal = items.reduce(
+      (sum, item) => sum + item.price * item.quantity,
+      0
+    );
+
+    // Calculate shipping fee based on the selected address
+    const shippingFee = calculateShippingCost({
+      province_name: formData.province_name || checkout?.province_name,
+      city_name: formData.city_name || checkout?.city_name
+    });
+
+    // Calculate the final total
+    const total = subtotal + shippingFee;
+
+    return { subtotal, shippingFee, total };
   };
 
   return (
@@ -56,6 +80,21 @@ export default function CheckoutPage() {
                 <div className="bg-white p-6 rounded-lg border border-gray-200">
                   <h2 className="text-xl font-semibold mb-4">Review Order</h2>
                   {/* Show shipping and payment summaries */}
+                  <div className="flex justify-between py-2">
+                    <span>Shipping</span>
+                    <span>
+                      {orderSummary.shippingFee === 0
+                        ? 'Free'
+                        : `₱${orderSummary.shippingFee.toLocaleString()}`}
+                    </span>
+                  </div>
+                  <div className="text-sm text-gray-600 mt-2">
+                    <p className="flex items-center gap-1">
+                      <InfoCircledIcon className="h-4 w-4" />
+                      Free shipping available for First District of Camarines
+                      Sur
+                    </p>
+                  </div>
                   <Button
                     onClick={handleNextStep}
                     className="w-full mt-4 bg-primary">

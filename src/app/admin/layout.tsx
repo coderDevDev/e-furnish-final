@@ -75,7 +75,7 @@ export default async function AdminLayout({
             <div className="text-xs opacity-80">{role}</div>
           </div>
           <div className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center font-bold uppercase">
-            {fullName?.charAt(0)} {fullName?.charAt(1)}
+            {fullName?.charAt(0)}
           </div>
         </div>
       </nav>

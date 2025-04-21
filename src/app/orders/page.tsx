@@ -42,6 +42,8 @@ export default function OrdersPage() {
   const loadOrders = async () => {
     try {
       const userOrders = await authService.getUserOrders();
+
+      console.log({ userOrders });
       setOrders(userOrders);
     } catch (error) {
       console.error('Error loading orders:', error);
@@ -118,7 +120,15 @@ export default function OrdersPage() {
                       addSuffix: true
                     })}
                   </p>
-                  <p className="text-sm font-medium">Order #{order.id}</p>
+                  <p className="text-sm font-medium">
+                    Order #{order.id}
+                    <span className="text-gray-500 ml-2">
+                      {' '}
+                      {order.items
+                        .map((item: any) => item.product.name)
+                        .join(', ')}
+                    </span>
+                  </p>
                 </div>
                 <Badge
                   className={`${getStatusColor(
@@ -136,14 +146,23 @@ export default function OrdersPage() {
                     <div key={index} className="flex-none relative">
                       <div className="w-20 h-20 relative rounded-md overflow-hidden bg-gray-100">
                         <Image
-                          src={item.product.gallery[0]}
-                          alt={item.product.title}
+                          src={
+                            item.product.gallery?.[0] ||
+                            item.product.srcurl ||
+                            '/placeholder-product.png'
+                          }
+                          alt={item.product.title || 'Product'}
                           fill
                           className="object-cover"
                         />
                         {item.quantity > 1 && (
-                          <div className="absolute bottom-0 right-0 bg-black/50 text-white text-xs px-1 rounded-tl">
+                          <div className="absolute bottom-0 right-0 bg-black/70 text-white text-xs px-1.5 py-0.5 rounded-tl">
                             x{item.quantity}
+                          </div>
+                        )}
+                        {item.customization && (
+                          <div className="absolute top-0 left-0 bg-primary/70 text-white text-xs px-1.5 py-0.5 rounded-br">
+                            Custom
                           </div>
                         )}
                       </div>
@@ -156,13 +175,16 @@ export default function OrdersPage() {
                     <p className="text-sm text-gray-600">
                       {order.items.length}{' '}
                       {order.items.length === 1 ? 'item' : 'items'}
+                      {order.items.some(
+                        (item: any) => item.product.customization
+                      ) && ' • Includes customized items'}
                     </p>
-                    <p className="font-medium">
+                    <p className="font-medium text-lg">
                       ₱{order.total_amount.toLocaleString()}
                     </p>
                   </div>
-                  <Button variant="outline" size="sm">
-                    View Details
+                  <Button variant="outline" size="sm" className="gap-1">
+                    <span>View Details</span>
                   </Button>
                 </div>
               </div>

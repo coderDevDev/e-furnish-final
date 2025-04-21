@@ -64,17 +64,14 @@ export function PaymentForm({ onNext }: PaymentFormProps) {
 
     const itemTotals = items.reduce(
       (acc, item: CartItem) => {
-        const basePrice = item.product.price * item.quantity;
-        const customizationCost =
-          item.product.customization?.totalCustomizationCost || 0;
-        const itemTotal = basePrice + customizationCost;
+        const itemPrice = item.product.price * item.quantity;
         const discountAmount =
-          (itemTotal * (item.product.discount?.percentage || 0)) / 100;
+          (itemPrice * (item.product.discount?.percentage || 0)) / 100;
 
         return {
-          subtotal: acc.subtotal + itemTotal,
+          subtotal: acc.subtotal + itemPrice,
           discount: acc.discount + discountAmount,
-          total: acc.total + (itemTotal - discountAmount)
+          total: acc.total + (itemPrice - discountAmount)
         };
       },
       { subtotal: 0, discount: 0, total: 0 }
@@ -109,7 +106,8 @@ export function PaymentForm({ onNext }: PaymentFormProps) {
         product_id: item.product.id,
         quantity: item.quantity,
         price: item.product.price,
-        customization: item.product.customization
+        customization: item.product.customization,
+        item_total: item.product.price * item.quantity
       }));
 
       const { data: order, error } = await authService.createOrder({
@@ -117,7 +115,7 @@ export function PaymentForm({ onNext }: PaymentFormProps) {
         items: orderItems,
         total_amount: total,
         shipping_fee: shippingFee,
-        payment_method: 'cod',
+        payment_method: values.paymentMethod,
         payment_status: 'pending',
         shipping_address: userProfile.profile.address,
         change_needed: values.changeNeeded

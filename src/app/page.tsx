@@ -5,9 +5,20 @@ import Header from '@/components/homepage/Header';
 import Reviews from '@/components/homepage/Reviews';
 import { Review } from '@/types/review.types';
 import { productService } from '@/lib/services/productService';
+import ShippingSection from '@/components/home/ShippingSection';
+import Image from 'next/image';
+import { FIRST_DISTRICT_MUNICIPALITIES } from '@/lib/utils/shipping';
 
 // Keep reviews data for now since it's not in the database yet
 const reviewsData: Review[] = [];
+
+const firstDistrictMunicipalities = [
+  'Cabusao',
+  'Del Gallego',
+  'Lupi',
+  'Ragay',
+  'Sipocot'
+];
 
 export default async function Home() {
   try {
@@ -40,6 +51,7 @@ export default async function Home() {
             <DressStyle />
           </div> */}
           {/* <Reviews data={reviewsData} /> */}
+          <ShippingSection />
         </main>
       </>
     );

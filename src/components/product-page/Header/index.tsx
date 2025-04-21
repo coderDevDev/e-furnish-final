@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import PhotoSection from './PhotoSection';
 import { Product } from '@/types/product.types';
 import { integralCF } from '@/styles/fonts';
@@ -27,24 +27,46 @@ import { useAppDispatch } from '@/lib/hooks/redux';
 import { addToCart } from '@/lib/store/slices/cartSlice';
 import { toast } from 'sonner';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { FIRST_DISTRICT_MUNICIPALITIES } from '@/lib/utils/shipping';
+import { customizationService } from '@/lib/services/customizationService';
 
 const Header = ({ data }: { data: Product }) => {
   const [customization, setCustomization] =
     useState<ProductCustomization | null>(null);
   const [showCustomization, setShowCustomization] = useState(false);
   const [isDownpaymentMode, setIsDownpaymentMode] = useState(false);
+  const [customizationOptions, setCustomizationOptions] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
   const dispatch = useAppDispatch();
 
   if (!data.discount) {
     data.discount = { percentage: 0, amount: 0 };
   }
 
+  useEffect(() => {
+    const fetchCustomizationOptions = async () => {
+      if (!data.id) return;
+
+      try {
+        setIsLoading(true);
+        const options =
+          await customizationService.getProductCustomizationOptions(data.id);
+        setCustomizationOptions(options || []);
+      } catch (error) {
+        console.error('Error fetching customization options:', error);
+        // Don't show error toast to avoid confusion on product page
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchCustomizationOptions();
+  }, [data.id]);
+
   const handleCustomizationChange = (
     newCustomization: ProductCustomization
   ) => {
     setCustomization(newCustomization);
-    // Calculate new price based on customizations
-    // Update UI accordingly
   };
 
   const handleAddToCart = () => {
@@ -214,6 +236,14 @@ const Header = ({ data }: { data: Product }) => {
               </div>
             </DialogContent>
           </Dialog> */}
+          <div className="mt-4 text-sm text-gray-600">
+            <p>
+              <span className="font-medium">Shipping:</span> Free shipping to
+              Camarines Sur (First District:{' '}
+              {FIRST_DISTRICT_MUNICIPALITIES.join(', ')}). ₱500 flat rate for
+              all other areas.
+            </p>
+          </div>
         </div>
       </div>
     </>

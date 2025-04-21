@@ -24,25 +24,17 @@ export default function CartPage() {
         // Skip unselected items
         if (!item.selected) return acc;
 
-        // Base price calculation
-        const basePrice = item.product.price * item.quantity;
-
-        // Add customization cost if any
-        const customizationCost =
-          (item.product.customization?.totalCustomizationCost || 0) *
-          item.quantity;
-
-        // Total item cost
-        const itemTotal = basePrice + customizationCost;
+        // Get product price (which may already include customization cost)
+        const itemPrice = item.product.price * item.quantity;
 
         // Calculate discount
         const discountAmount =
-          (itemTotal * (item.product.discount?.percentage || 0)) / 100;
+          (itemPrice * (item.product.discount?.percentage || 0)) / 100;
 
         return {
-          subtotal: acc.subtotal + itemTotal,
+          subtotal: acc.subtotal + itemPrice,
           discount: acc.discount + discountAmount,
-          total: acc.total + (itemTotal - discountAmount)
+          total: acc.total + (itemPrice - discountAmount)
         };
       },
       { subtotal: 0, discount: 0, total: 0 }

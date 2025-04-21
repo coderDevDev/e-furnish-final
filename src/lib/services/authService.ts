@@ -198,22 +198,56 @@ export const authService = {
     if (userError) throw userError;
     if (!user) throw new Error('No user found');
 
+    // First get the orders
     const { data: orders, error: ordersError } = await supabase
       .from('orders')
-      .select(
-        `
-        *,
-        items:order_items (
-          *,
-          product:products (*)
-        )
-      `
-      )
+      .select('*')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false });
 
     if (ordersError) throw ordersError;
-    return orders;
+    if (!orders) return [];
+
+    // Process each order to enhance with product details
+    const enhancedOrders = await Promise.all(
+      orders.map(async order => {
+        // Parse order items if they exist
+        const orderItems = order.items || [];
+
+        // Get all product IDs from the order
+        const productIds = orderItems.map(item => item.product_id);
+
+        // Fetch product details for these IDs
+        const { data: products } = await supabase
+          .from('products')
+          .select('id, title, srcurl, gallery, price, category')
+          .in('id', productIds);
+
+        // Map products to items
+        const itemsWithProducts = orderItems.map(item => {
+          const product = products?.find(p => p.id === item.product_id) || {};
+          return {
+            ...item,
+            product: {
+              id: item.product_id,
+              title: product.title || 'Product',
+              name: product.title || 'Product',
+              srcurl: product.srcurl || null,
+              gallery: product.gallery || [],
+              price: item.price,
+              customization: item.customization || null
+            }
+          };
+        });
+
+        return {
+          ...order,
+          items: itemsWithProducts
+        };
+      })
+    );
+
+    return enhancedOrders;
   },
 
   getOrderDetails: async (orderId: string) => {
@@ -226,20 +260,48 @@ export const authService = {
 
     const { data: order, error: orderError } = await supabase
       .from('orders')
-      .select(
-        `
-        *,
-        items:order_items (
-          *,
-          product:products (*)
-        )
-      `
-      )
+      .select('*')
       .eq('id', orderId)
       .eq('user_id', user.id)
       .single();
 
     if (orderError) throw orderError;
-    return order;
+    if (!order) throw new Error('Order not found');
+
+    // Parse order items if they exist
+    const orderItems = order.items || [];
+
+    // Get all product IDs from the order
+    const productIds = orderItems.map(item => item.product_id);
+
+    // Fetch product details for these IDs
+    const { data: products } = await supabase
+      .from('products')
+      .select('id, title, srcurl, gallery, price, category, description')
+      .in('id', productIds);
+
+    // Map products to items
+    const itemsWithProducts = orderItems.map(item => {
+      const product = products?.find(p => p.id === item.product_id) || {};
+      return {
+        ...item,
+        product: {
+          id: item.product_id,
+          title: product.title || 'Product',
+          name: product.title || 'Product',
+          srcurl: product.srcurl || null,
+          gallery: product.gallery || [],
+          price: item.price,
+          category: product.category || '',
+          description: product.description || '',
+          customization: item.customization || null
+        }
+      };
+    });
+
+    return {
+      ...order,
+      items: itemsWithProducts
+    };
   }
 };

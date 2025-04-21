@@ -121,31 +121,31 @@ export default function AdminTemplate({
       {/* Sidebar */}
       <aside
         className={cn(
-          'fixed left-0 top-0 z-40 h-full bg-white transition-all duration-300',
+          'fixed left-0 top-0 z-40 h-full transition-all duration-300 bg-[#F5F5DC] shadow-lg',
           isSidebarOpen ? 'w-64' : 'w-20'
         )}>
-        <div className="flex h-full flex-col border-r border-slate-100">
+        <div className="flex h-full flex-col border-r border-[#D2B48C]">
           {/* Sidebar Header */}
           <div className="flex h-16 flex-col items-center justify-between px-4 mt-10">
             {isSidebarOpen && (
-              <span className="text-xl font-semibold text-slate-900">
+              <span className="text-2xl font-bold tracking-wide text-[#7B3F00]">
                 E-FURNISH
               </span>
             )}
           </div>
 
           {/* Sidebar Links */}
-          <div className="flex-1 overflow-y-auto p-4">
+          <div className="flex-1 overflow-y-auto px-4 pt-6 pb-4">
             <nav className="space-y-2">
               {links.map(link => (
                 <Link
                   key={link.href}
                   href={link.href}
                   className={cn(
-                    'flex items-center space-x-3 rounded-xl px-4 py-2.5 transition-colors',
+                    'flex items-center space-x-3 rounded-lg px-4 py-2.5 text-sm font-medium transition-colors',
                     pathname === link.href
-                      ? 'bg-primary/10 text-primary'
-                      : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                      ? 'bg-[#7B3F00] text-white shadow-sm'
+                      : 'text-[#4B3A2D] hover:bg-[#EEDFCC] hover:text-[#7B3F00]'
                   )}>
                   <link.icon size={20} />
                   {isSidebarOpen && <span>{link.label}</span>}
@@ -155,10 +155,10 @@ export default function AdminTemplate({
           </div>
 
           {/* User Info and Logout */}
-          <div className="p-4">
+          <div className="px-4 py-4 border-t border-[#D2B48C]">
             <button
               onClick={handleLogout}
-              className="flex items-center space-x-3 rounded-xl px-4 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900">
+              className="flex items-center space-x-3 rounded-lg px-4 py-2.5 text-[#4B3A2D] hover:bg-[#EEDFCC] hover:text-[#7B3F00] transition-colors">
               <RiLogoutBoxLine size={20} />
               {isSidebarOpen && <span>Logout</span>}
             </button>

@@ -43,6 +43,53 @@ interface ProductCardProps {
   index: number;
 }
 
+const CustomizationDetails = ({ customization }: { customization: any }) => {
+  if (!customization) return null;
+
+  return (
+    <div className="mt-1 text-sm">
+      <div className="text-gray-600 font-medium">Customizations:</div>
+
+      {customization.breakdown && customization.breakdown.length > 0 ? (
+        <div className="ml-2 space-y-1 mt-1">
+          {customization.breakdown.map((item: any, i: number) => (
+            <div key={i} className="flex justify-between text-gray-500">
+              <span>{item.details.displayName || item.fieldLabel}</span>
+              {item.cost > 0 && (
+                <span className="text-gray-600">
+                  +₱{item.cost.toLocaleString()}
+                </span>
+              )}
+            </div>
+          ))}
+
+          {customization.totalCustomizationCost > 0 && (
+            <div className="flex justify-between text-gray-700 pt-1 border-t border-dashed border-gray-200">
+              <span>Total customization:</span>
+              <span>
+                +₱{customization.totalCustomizationCost.toLocaleString()}
+              </span>
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="ml-2 text-gray-500">
+          {Object.entries(customization.fields || {})
+            .filter(([_, value]) => value)
+            .map(([key, value]: [string, any], i: number) => (
+              <div key={i}>
+                {key
+                  .replace(/([A-Z])/g, ' $1')
+                  .replace(/^./, str => str.toUpperCase())}
+                : {value.toString()}
+              </div>
+            ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
 const ProductCard = ({ data, index }: ProductCardProps) => {
   const dispatch = useAppDispatch();
   const { product, quantity, selected } = data;
@@ -88,9 +135,7 @@ const ProductCard = ({ data, index }: ProductCardProps) => {
     dispatch(toggleItemSelection(index));
   };
 
-  const finalPrice =
-    product.price * quantity +
-    (product.customization?.totalCustomizationCost || 0);
+  const finalPrice = product.price * quantity;
 
   return (
     <div
@@ -116,9 +161,7 @@ const ProductCard = ({ data, index }: ProductCardProps) => {
         <div className="flex-1">
           <h3 className="font-medium">{product.name}</h3>
           {product.customization && (
-            <div className="text-sm text-gray-500 mt-1">
-              <p>Customizations:</p>
-            </div>
+            <CustomizationDetails customization={product.customization} />
           )}
           <p className="text-sm text-gray-500">Stock: {product.stock}</p>
         </div>

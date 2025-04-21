@@ -7,6 +7,7 @@ import { SHIPPING_CONFIG } from '@/config/shipping';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
 import { setShippingFee } from '@/lib/features/checkout/checkoutSlice';
+import { calculateShippingCost } from '@/lib/utils/shipping';
 
 interface ShippingInfo {
   distance: number;
@@ -63,6 +64,34 @@ export default function OrderSummary() {
     }
     throw new Error('Route not found');
   };
+  // Add this function to calculate shipping based on address
+  function calculateShippingFee(shippingAddress?: ShippingInfo): number {
+    // No address means default shipping rate
+    if (!shippingAddress?.city_name || !shippingAddress?.province_name) {
+      return 500;
+    }
+
+    // First check if it's in Camarines Sur province
+    if (shippingAddress.province_name.toLowerCase().includes('camarines sur')) {
+      // First District municipalities with free shipping
+      const firstDistrictMunicipalities = [
+        'cabusao',
+        'del gallego',
+        'lupi',
+        'ragay',
+        'sipocot'
+      ];
+
+      // Check if the city is in the first district (case-insensitive)
+      const cityLower = shippingAddress.city_name.toLowerCase().trim();
+      if (firstDistrictMunicipalities.includes(cityLower)) {
+        return 0; // Free shipping
+      }
+    }
+
+    // Default shipping fee for other areas
+    return 500;
+  }
 
   // Calculate shipping fee immediately when address is available
   useEffect(() => {
@@ -71,97 +100,171 @@ export default function OrderSummary() {
     }
   }, [address?.address]); // Only recalculate when address string changes
 
-  const calculateShippingFee = async () => {
-    if (!address?.address) {
-      setShipping({
-        distance: 0,
-        fee: 0,
-        isWithinService: true
-      });
-      dispatch(setShippingFee(0));
-      return;
-    }
+  // const calculateShippingFee = async () => {
+  //   if (!address?.address) {
+  //     setShipping({
+  //       distance: 0,
+  //       fee: 0,
+  //       isWithinService: true
+  //     });
+  //     dispatch(setShippingFee(0));
+  //     return;
+  //   }
 
-    try {
-      setCalculatingShipping(true);
+  //   try {
+  //     setCalculatingShipping(true);
 
-      // Get coordinates for delivery address
-      const destinationCoords = await getCoordinatesFromAddress(
-        address.address
-      );
+  //     // Get coordinates for delivery address
+  //     const destinationCoords = await getCoordinatesFromAddress(
+  //       address.address
+  //     );
 
-      // Calculate distance
-      const distance = await calculateDistance(
-        SHIPPING_CONFIG.serviceAreaCenter,
-        destinationCoords
-      );
+  //     // Calculate distance
+  //     const distance = await calculateDistance(
+  //       SHIPPING_CONFIG.serviceAreaCenter,
+  //       destinationCoords
+  //     );
 
-      console.log({ distance });
+  //     console.log({ distance });
 
-      const isWithinService = distance <= SHIPPING_CONFIG.maxServiceDistance;
-      const fee = isWithinService
-        ? SHIPPING_CONFIG.baseRate + distance * SHIPPING_CONFIG.ratePerKm
-        : 0;
+  //     const isWithinService = distance <= SHIPPING_CONFIG.maxServiceDistance;
+  //     const fee = isWithinService
+  //       ? SHIPPING_CONFIG.baseRate + distance * SHIPPING_CONFIG.ratePerKm
+  //       : 0;
 
-      setShipping({
-        distance: Math.round(distance * 10) / 10,
-        fee: Math.round(fee),
-        isWithinService
-      });
+  //     setShipping({
+  //       distance: Math.round(distance * 10) / 10,
+  //       fee: Math.round(fee),
+  //       isWithinService
+  //     });
 
-      // Dispatch shipping fee to Redux store
-      dispatch(setShippingFee(Math.round(fee)));
+  //     // Dispatch shipping fee to Redux store
+  //     dispatch(setShippingFee(Math.round(fee)));
 
-      if (!isWithinService) {
-        toast.error(
-          `Sorry, this location is outside our service area (${SHIPPING_CONFIG.maxServiceDistance}km radius)`
-        );
-      }
-    } catch (error) {
-      console.error('Error calculating shipping:', error);
-      toast.error('Failed to calculate shipping fee');
-      setShipping({
-        distance: 0,
-        fee: 0,
-        isWithinService: false
-      });
-      dispatch(setShippingFee(0));
-    } finally {
-      setCalculatingShipping(false);
-    }
-  };
+  //     if (!isWithinService) {
+  //       toast.error(
+  //         `Sorry, this location is outside our service area (${SHIPPING_CONFIG.maxServiceDistance}km radius)`
+  //       );
+  //     }
+  //   } catch (error) {
+  //     console.error('Error calculating shipping:', error);
+  //     toast.error('Failed to calculate shipping fee');
+  //     setShipping({
+  //       distance: 0,
+  //       fee: 0,
+  //       isWithinService: false
+  //     });
+  //     dispatch(setShippingFee(0));
+  //   } finally {
+  //     setCalculatingShipping(false);
+  //   }
+  // };
 
   const calculateTotals = () => {
     const itemTotals = items.reduce(
       (acc, item: CartItem) => {
-        const basePrice = item.product.price * item.quantity;
-        const customizationCost =
-          item.product.customization?.totalCustomizationCost || 0;
-        const itemTotal = basePrice + customizationCost;
+        // Get product price (which already includes customization cost)
+        const itemPrice = item.product.price * item.quantity;
+
+        // Calculate discount
         const discountAmount =
-          (itemTotal * (item.product.discount?.percentage || 0)) / 100;
+          (itemPrice * (item.product.discount?.percentage || 0)) / 100;
 
         return {
-          subtotal: acc.subtotal + itemTotal,
+          subtotal: acc.subtotal + itemPrice,
           discount: acc.discount + discountAmount,
-          total: acc.total + (itemTotal - discountAmount)
+          total: acc.total + (itemPrice - discountAmount)
         };
       },
       { subtotal: 0, discount: 0, total: 0 }
     );
 
+    // Use our consistent shipping fee calculation
+    const shippingFee = calculateShippingFee(address);
+
     return {
       ...itemTotals,
-      shippingFee: shipping.fee,
-      grandTotal: itemTotals.total + shipping.fee
+      shippingFee,
+      grandTotal: itemTotals.total + shippingFee
     };
   };
 
-  const { subtotal, discount, shippingFee, grandTotal } = calculateTotals();
+  const { subtotal, discount, grandTotal } = calculateTotals();
+
+  const shippingAddress = address;
+
+  const shippingFeeFromAddress = calculateShippingCost({
+    province_name: shippingAddress?.province_name,
+    city_name: shippingAddress?.city_name
+  });
+
+  // Rename the function to avoid name conflicts
+  function getLocationBasedShippingFee(shippingAddress?: any): number {
+    // No address means default shipping rate
+    if (!shippingAddress?.city_name || !shippingAddress?.province_name) {
+      return 500;
+    }
+
+    // First check if it's in Camarines Sur province
+    if (shippingAddress.province_name.toLowerCase().includes('camarines sur')) {
+      // First District municipalities with free shipping
+      const firstDistrictMunicipalities = [
+        'cabusao',
+        'del gallego',
+        'lupi',
+        'ragay',
+        'sipocot'
+      ];
+
+      // Check if the city is in the first district (case-insensitive)
+      const cityLower = shippingAddress.city_name.toLowerCase().trim();
+      if (firstDistrictMunicipalities.includes(cityLower)) {
+        return 0; // Free shipping
+      }
+    }
+
+    // Default shipping fee for other areas
+    return 500;
+  }
+
+  const shippingFee = getLocationBasedShippingFee(address);
 
   return (
     <div className="bg-white p-6 rounded-lg border border-gray-200">
       <h2 className="text-xl font-semibold mb-6">Order Summary</h2>
+      <div className="space-y-2 mb-4">
+        <h3 className="font-medium text-sm text-gray-500">Items in Order</h3>
+        {items.map((item, index) => (
+          <div key={index} className="flex justify-between text-sm">
+            <div className="flex-1">
+              <div className="font-medium">{item.product.name}</div>
+              {item.product.customization && (
+                <div className="text-xs text-gray-500">
+                  {Object.entries(item.product.customization.fields || {})
+                    .filter(([_, value]) => value)
+                    .map(([key, value]) => (
+                      <div key={key} className="truncate">
+                        {key
+                          .replace(/([A-Z])/g, ' $1')
+                          .replace(/^./, str => str.toUpperCase())}
+                        : {value.toString()}
+                      </div>
+                    ))}
+                </div>
+              )}
+            </div>
+            <div className="text-right whitespace-nowrap">
+              <div>
+                {item.quantity} × ₱{item.product.price.toLocaleString()}
+              </div>
+              <div>
+                ₱{(item.quantity * item.product.price).toLocaleString()}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+      <hr className="border-black/10 mb-4" />
       <div className="space-y-4">
         <div className="flex justify-between text-black/60">
           <span>Subtotal</span>
@@ -198,6 +301,13 @@ export default function OrderSummary() {
         )}
 
         <hr className="border-black/10" />
+
+        <div className="flex justify-between py-2">
+          <span>Shipping</span>
+          <span>
+            {shippingFee === 0 ? 'Free' : `₱${shippingFee.toLocaleString()}`}
+          </span>
+        </div>
 
         <div className="flex justify-between font-medium text-lg">
           <span>Total</span>

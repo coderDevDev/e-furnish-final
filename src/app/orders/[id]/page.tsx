@@ -101,11 +101,20 @@ export default function OrderDetailsPage({ params }: OrderDetailsProps) {
                   <div className="flex gap-4">
                     <div className="w-24 h-24 relative rounded-md overflow-hidden bg-gray-100 flex-shrink-0">
                       <Image
-                        src={item.product.gallery[0]}
-                        alt={item.product.title}
+                        src={
+                          item.product.gallery?.[0] ||
+                          item.product.srcurl ||
+                          '/placeholder-product.png'
+                        }
+                        alt={item.product.title || item.product.name}
                         fill
                         className="object-cover"
                       />
+                      {item.product.customization && (
+                        <div className="absolute top-0 left-0 bg-primary/70 text-white text-xs p-1 rounded-br">
+                          Custom
+                        </div>
+                      )}
                     </div>
                     <div className="flex-grow">
                       <h3 className="font-medium text-lg">
@@ -117,28 +126,86 @@ export default function OrderDetailsPage({ params }: OrderDetailsProps) {
                           ₱{item.product.price.toLocaleString()}
                         </p>
                         {item.customization && (
-                          <div className="mt-2 text-sm text-gray-600">
-                            <p className="font-medium">Customization:</p>
-                            <ul className="list-disc list-inside ml-2">
-                              {item.customization.material && (
-                                <li>Material: {item.customization.material}</li>
-                              )}
-                              {item.customization.color && (
-                                <li>Color: {item.customization.color.name}</li>
-                              )}
-                              {item.customization.addons?.length > 0 && (
-                                <li>
-                                  Add-ons:{' '}
-                                  {item.customization.addons
-                                    .map((addon: any) => addon.name)
-                                    .join(', ')}
-                                </li>
-                              )}
-                            </ul>
-                            <p className="mt-1">
-                              Customization Cost: ₱
-                              {item.customization.totalCustomizationCost.toLocaleString()}
+                          <div className="mt-2 text-sm text-gray-600 bg-gray-50 p-3 rounded-md">
+                            <p className="font-medium text-gray-700 mb-1">
+                              Customization Details:
                             </p>
+
+                            {/* Show breakdown if available */}
+                            {item.customization.breakdown?.length > 0 ? (
+                              <div className="space-y-1">
+                                {item.customization.breakdown.map(
+                                  (custom: any, idx: number) => (
+                                    <div
+                                      key={idx}
+                                      className="flex justify-between">
+                                      <span>
+                                        {custom.fieldLabel}:{' '}
+                                        {custom.details?.name ||
+                                          custom.selectedValue}
+                                        {custom.details?.color && (
+                                          <span
+                                            className="inline-block w-3 h-3 ml-1 rounded-full"
+                                            style={{
+                                              backgroundColor:
+                                                custom.details.color
+                                            }}
+                                          />
+                                        )}
+                                      </span>
+                                      {custom.cost > 0 && (
+                                        <span className="text-gray-700">
+                                          +₱{custom.cost.toLocaleString()}
+                                        </span>
+                                      )}
+                                    </div>
+                                  )
+                                )}
+                                <div className="border-t border-gray-200 mt-2 pt-2 flex justify-between font-medium">
+                                  <span>Total Customization:</span>
+                                  <span>
+                                    ₱
+                                    {item.customization.totalCustomizationCost?.toLocaleString() ||
+                                      '0'}
+                                  </span>
+                                </div>
+                              </div>
+                            ) : (
+                              // Simple fields display if no breakdown
+                              <div className="space-y-1">
+                                {Object.entries(
+                                  item.customization.fields || {}
+                                ).map(
+                                  ([key, value]: [string, any], i: number) => (
+                                    <div
+                                      key={i}
+                                      className="flex justify-between">
+                                      <span>
+                                        {key
+                                          .replace(/([A-Z])/g, ' $1')
+                                          .replace(/^./, str =>
+                                            str.toUpperCase()
+                                          )}
+                                        :
+                                        {typeof value === 'object'
+                                          ? value.name || JSON.stringify(value)
+                                          : value}
+                                      </span>
+                                    </div>
+                                  )
+                                )}
+                                {item.customization.totalCustomizationCost >
+                                  0 && (
+                                  <div className="border-t border-gray-200 mt-2 pt-2 flex justify-between font-medium">
+                                    <span>Total Customization:</span>
+                                    <span>
+                                      ₱
+                                      {item.customization.totalCustomizationCost.toLocaleString()}
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
+                            )}
                           </div>
                         )}
                       </div>
@@ -157,7 +224,7 @@ export default function OrderDetailsPage({ params }: OrderDetailsProps) {
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <div className="flex items-center gap-2 mb-6">
             <Truck className="h-5 w-5" />
-            <h2 className="text-lg font-semibold">Shipping Informationss</h2>
+            <h2 className="text-lg font-semibold">Shipping Information</h2>
           </div>
           <div className="space-y-2 text-gray-600">
             <p>
