@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
 
 export default function SupplierTemplate({
   children
@@ -25,7 +26,7 @@ export default function SupplierTemplate({
   const [loading, setLoading] = useState(true);
   const pathname = usePathname();
   const supabase = createClientComponentClient();
-
+  const [isLoading, setIsLoading] = useState(false);
   useEffect(() => {
     checkSupplierStatus();
   }, []);
@@ -76,6 +77,20 @@ export default function SupplierTemplate({
     );
   }
 
+  // Logout
+  const handleLogout = async () => {
+    try {
+      setIsLoading(true);
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      window.location.href = '/login';
+    } catch (error) {
+      console.error('Error logging out:', error);
+      toast.error('Failed to log out');
+    } finally {
+      setIsLoading(false);
+    }
+  };
   return (
     <div className="flex flex-col min-h-screen">
       {/* Breadcrumb */}
@@ -109,7 +124,7 @@ export default function SupplierTemplate({
             </>
           )}
         </div>
-        <Button className="mt-2" onClick={() => supabase.auth.signOut()}>
+        <Button className="mt-2" onClick={handleLogout}>
           Logout
         </Button>
       </div>

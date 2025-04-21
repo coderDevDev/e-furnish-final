@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Package, Truck, BarChart3, DollarSign } from 'lucide-react';
+import { Package, Truck, BarChart3, PhilippinePeso } from 'lucide-react';
 import OrdersFromOwnerPanel from '../components/OrdersFromOwnerPanel';
 import Link from 'next/link';
 
@@ -160,7 +160,7 @@ export default function SupplierDashboard() {
           </CardHeader>
           <CardContent>
             <div className="flex items-center">
-              <DollarSign className="h-5 w-5 text-emerald-500 mr-2" />
+              <PhilippinePeso size={20} className="text-emerald-500 mr-2" />
               <span className="text-2xl font-bold">
                 {loading ? '—' : `₱${stats.totalRevenue.toLocaleString()}`}
               </span>

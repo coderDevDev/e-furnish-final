@@ -6,8 +6,8 @@ import { Toaster } from 'sonner';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'Supplier Portal - Woodworks',
-  description: 'Supplier Portal for Woodworks - Manage your offers and orders'
+  title: 'Supplier Portal - eFurnish',
+  description: 'Supplier Portal for eFurnish - Manage your offers and orders'
 };
 
 export default function SupplierLayout({
