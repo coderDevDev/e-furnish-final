@@ -45,6 +45,11 @@ const adminLinks = [
     label: 'Shipping Settings',
     href: '/admin/settings',
     icon: RiSettings4Line
+  },
+  {
+    label: 'Supplier Settings',
+    href: '/admin/supplier-settings',
+    icon: MdInventory2
   }
 ];
 

@@ -411,7 +411,7 @@ const ShippingSettings = () => {
             <Truck className="h-5 w-5 text-primary" />
             <CardTitle>Shipping Settings</CardTitle>
           </div>
-          <Button
+          {/* <Button
             variant="outline"
             size="sm"
             onClick={setupDatabase}
@@ -427,7 +427,7 @@ const ShippingSettings = () => {
                 Setup/Reset Database
               </>
             )}
-          </Button>
+          </Button> */}
         </div>
         <CardDescription>
           Configure shipping zones and rates for your store
@@ -887,7 +887,7 @@ export default function SettingsPage() {
     <div className="space-y-8">
       <h1 className="mb-6 text-2xl font-bold">Settings</h1>
 
-      <div className="grid gap-6 md:grid-cols-2">
+      {/* <div className="grid gap-6 md:grid-cols-2">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)}>
             <Card>
@@ -1093,7 +1093,7 @@ export default function SettingsPage() {
             </CardContent>
           </Card>
         </div>
-      </div>
+      </div> */}
 
       {!tableExists && (
         <Alert className="mt-6" variant="destructive">

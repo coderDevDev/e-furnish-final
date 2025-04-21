@@ -1,112 +1,80 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import SupplierOfferList from './SupplierOfferList';
-import AddRawMaterialOfferForm from './AddRawMaterialOfferForm';
-import { supplierOfferService } from '@/lib/services/supplierOfferService';
-import { SupplierOffer, SupplierOfferFormData } from '@/types/inventory.types';
-import { Button } from '@/components/ui/button';
-import { toast } from 'sonner';
-import { Plus } from 'lucide-react';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { redirect } from 'next/navigation';
+import { Loader2 } from 'lucide-react';
+import MyOffersList from '../components/MyOffersList';
 
-export default function SupplierOrderManagement() {
-  const [offers, setOffers] = useState<SupplierOffer[]>([]);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingOffer, setEditingOffer] = useState<SupplierOffer | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-
-  const fetchOffers = async () => {
-    try {
-      setIsLoading(true);
-      const data = await supplierOfferService.getAllOffers();
-      setOffers(data);
-    } catch (error) {
-      toast.error('Failed to fetch offers');
-      console.error('Error fetching offers:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+export default function OffersPage() {
+  const [isApprovedSupplier, setIsApprovedSupplier] = useState<boolean | null>(
+    null
+  );
+  const [loading, setLoading] = useState(true);
+  const supabase = createClientComponentClient();
 
   useEffect(() => {
-    fetchOffers();
+    checkSupplierStatus();
   }, []);
 
-  const handleAddOffer = async (data: SupplierOfferFormData) => {
+  const checkSupplierStatus = async () => {
     try {
-      await supplierOfferService.createOffer(data);
-      await fetchOffers();
-      setIsModalOpen(false);
-      toast.success('Offer added successfully');
-    } catch (error) {
-      toast.error('Failed to add offer');
-      throw error;
-    }
-  };
+      setLoading(true);
 
-  const handleEditOffer = async (data: SupplierOfferFormData) => {
-    try {
-      if (!editingOffer) return;
-
-      await supplierOfferService.updateOffer(editingOffer.id, data);
-      await fetchOffers();
-      setEditingOffer(null);
-      setIsModalOpen(false);
-      toast.success('Offer updated successfully');
-    } catch (error) {
-      console.error('Error updating offer:', error);
-      toast.error('Failed to update offer');
-    }
-  };
-
-  const handleDeleteOffer = async (id: string) => {
-    try {
-      // Add confirmation dialog
-      if (!window.confirm('Are you sure you want to delete this offer?')) {
+      // Check if user is logged in
+      const {
+        data: { user }
+      } = await supabase.auth.getUser();
+      if (!user) {
+        // Redirect to login
+        window.location.href = '/login?redirect=/supplier/offers';
         return;
       }
 
-      await supplierOfferService.deleteOffer(id);
-      await fetchOffers();
-      toast.success('Offer deleted successfully');
+      // Check if approved supplier
+      const { data, error } = await supabase
+        .from('suppliers')
+        .select('status')
+        .eq('user_id', user.id)
+        .single();
+
+      if (error) {
+        console.error('Error checking supplier status:', error);
+        setIsApprovedSupplier(false);
+
+        // If not a supplier at all, redirect to registration
+        if (error.code === 'PGRST116') {
+          redirect('/supplier/register');
+        }
+        return;
+      }
+
+      // Check if approved
+      if (data.status !== 'approved') {
+        setIsApprovedSupplier(false);
+        redirect('/supplier/application-status');
+      } else {
+        setIsApprovedSupplier(true);
+      }
     } catch (error) {
-      console.error('Error deleting offer:', error);
-      toast.error('Failed to delete offer');
+      console.error('Error:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const openEditModal = (offer: SupplierOffer) => {
-    setEditingOffer(offer);
-    setIsModalOpen(true);
-  };
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-[calc(100vh-200px)]">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Material Offers</h1>
-        <Button onClick={() => setIsModalOpen(true)}>
-          <Plus className="h-4 w-4 mr-1" />
-          Add New Offer
-        </Button>
-      </div>
-
-      <SupplierOfferList
-        offers={offers}
-        onEdit={openEditModal}
-        onDelete={handleDeleteOffer}
-        isLoading={isLoading}
-      />
-
-      {isModalOpen && (
-        <AddRawMaterialOfferForm
-          initialData={editingOffer}
-          onAdd={editingOffer ? handleEditOffer : handleAddOffer}
-          onClose={() => {
-            setIsModalOpen(false);
-            setEditingOffer(null);
-          }}
-        />
-      )}
+    <div className="container py-10">
+      <h1 className="text-2xl font-bold mb-6">My Offers</h1>
+      <MyOffersList />
     </div>
   );
 }

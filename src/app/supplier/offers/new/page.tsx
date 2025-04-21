@@ -4,20 +4,17 @@ import { useEffect, useState } from 'react';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { redirect } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
-import OrdersFromOwnerPanel from '../components/OrdersFromOwnerPanel';
-import OrderHistory from '@/components/admin/suppliers/OrderHistory';
+import CreateOfferForm from '../../components/CreateOfferForm';
 
-export default function OrdersPage() {
+export default function NewOfferPage() {
   const [isApprovedSupplier, setIsApprovedSupplier] = useState<boolean | null>(
     null
   );
   const [loading, setLoading] = useState(true);
-  const [supplierId, setSupplierId] = useState<string>('');
   const supabase = createClientComponentClient();
 
   useEffect(() => {
     checkSupplierStatus();
-    getSupplierData();
   }, []);
 
   const checkSupplierStatus = async () => {
@@ -30,7 +27,7 @@ export default function OrdersPage() {
       } = await supabase.auth.getUser();
       if (!user) {
         // Redirect to login
-        window.location.href = '/login?redirect=/supplier/orders';
+        window.location.href = '/login?redirect=/supplier/offers/new';
         return;
       }
 
@@ -66,23 +63,6 @@ export default function OrdersPage() {
     }
   };
 
-  const getSupplierData = async () => {
-    const {
-      data: { user }
-    } = await supabase.auth.getUser();
-    if (!user) return;
-
-    const { data } = await supabase
-      .from('suppliers')
-      .select('id')
-      .eq('user_id', user.id)
-      .single();
-
-    if (data) {
-      setSupplierId(data.id);
-    }
-  };
-
   if (loading) {
     return (
       <div className="flex justify-center items-center h-[calc(100vh-200px)]">
@@ -91,15 +71,10 @@ export default function OrdersPage() {
     );
   }
 
-  if (!supplierId) {
-    return <div>Loading...</div>;
-  }
-
   return (
-    <div>
-      <h1 className="text-2xl font-bold mb-6">Orders from Owners</h1>
-      <OrdersFromOwnerPanel />
-      <OrderHistory supplierId={supplierId} />
+    <div className="container max-w-3xl py-10">
+      <h1 className="text-2xl font-bold mb-6">Create New Offer</h1>
+      <CreateOfferForm />
     </div>
   );
 }

@@ -435,7 +435,7 @@ export default function InventoryManagement({
             <Package className="h-4 w-4" />
             Inventory
           </TabsTrigger>
-          <TabsTrigger
+          {/* <TabsTrigger
             value="orders"
             className={cn(
               'flex items-center gap-2 px-4 py-3 data-[state=active]:border-b-2 data-[state=active]:border-primary',
@@ -444,8 +444,8 @@ export default function InventoryManagement({
             )}>
             <ShoppingCart className="h-4 w-4" />
             Orders
-          </TabsTrigger>
-          <TabsTrigger
+          </TabsTrigger> */}
+          {/* <TabsTrigger
             value="suppliers"
             className={cn(
               'flex items-center gap-2 px-4 py-3 data-[state=active]:border-b-2 data-[state=active]:border-primary',
@@ -464,7 +464,7 @@ export default function InventoryManagement({
             )}>
             <Users className="h-4 w-4" />
             Supplier Offers
-          </TabsTrigger>
+          </TabsTrigger> */}
         </TabsList>
 
         <TabsContent value="inventory" className="mt-6">
