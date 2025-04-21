@@ -13,6 +13,7 @@ import {
   ChevronRight
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
 
 export default function SupplierTemplate({
   children
@@ -78,13 +79,17 @@ export default function SupplierTemplate({
   return (
     <div className="flex flex-col min-h-screen">
       {/* Breadcrumb */}
-      <div className="border-b bg-[#B08968] text-white p-3">
+      <div className="border-b bg-[#B08968] text-white p-3 flex justify-between">
         <div className="container flex items-center py-4 text-sm">
-          <Link href="/" className="text-white hover:text-foreground">
+          <Link
+            href="/supplier/dashboard"
+            className="text-white hover:text-foreground">
             Home
           </Link>
           <ChevronRight className="h-4 w-4 mx-2 text-white" />
-          <Link href="/supplier" className="text-white hover:text-foreground">
+          <Link
+            href="/supplier/dashboard"
+            className="text-white hover:text-foreground">
             Supplier
           </Link>
           {pathname !== '/supplier' && (
@@ -104,6 +109,9 @@ export default function SupplierTemplate({
             </>
           )}
         </div>
+        <Button className="mt-2" onClick={() => supabase.auth.signOut()}>
+          Logout
+        </Button>
       </div>
 
       <div className="flex-1 container grid grid-cols-1 md:grid-cols-[240px_1fr] gap-8 py-8">
