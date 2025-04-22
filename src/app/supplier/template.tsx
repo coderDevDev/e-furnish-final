@@ -15,18 +15,22 @@ import {
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+import { RiLogoutBoxLine } from 'react-icons/ri';
 
 export default function SupplierTemplate({
   children
 }: {
   children: React.ReactNode;
 }) {
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
+
   const [isSupplier, setIsSupplier] = useState<boolean | null>(null);
   const [supplierStatus, setSupplierStatus] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const pathname = usePathname();
   const supabase = createClientComponentClient();
-  const [isLoading, setIsLoading] = useState(false);
+
   useEffect(() => {
     checkSupplierStatus();
   }, []);
@@ -91,88 +95,88 @@ export default function SupplierTemplate({
       setIsLoading(false);
     }
   };
+
+  let links = [
+    {
+      href: '/supplier/dashboard',
+      label: 'Dashboard',
+      icon: <LayoutDashboard className="h-4 w-4 mr-2" />
+    },
+    {
+      href: '/supplier/application-status',
+      label: 'My Application',
+      icon: <FileSignature className="h-4 w-4 mr-2" />
+    },
+    {
+      href: '/supplier/offers',
+      label: 'My Offers & Deals',
+      icon: <Package className="h-4 w-4 mr-2" />
+    },
+    {
+      href: '/supplier/orders',
+      label: 'Orders from Owner',
+      icon: <Truck className="h-4 w-4 mr-2" />
+    }
+  ];
   return (
-    <div className="flex flex-col min-h-screen">
-      {/* Breadcrumb */}
-      <div className="border-b bg-[#B08968] text-white p-3 flex justify-between">
-        <div className="container flex items-center py-4 text-sm">
-          <Link
-            href="/supplier/dashboard"
-            className="text-white hover:text-foreground">
-            Home
-          </Link>
-          <ChevronRight className="h-4 w-4 mx-2 text-white" />
-          <Link
-            href="/supplier/dashboard"
-            className="text-white hover:text-foreground">
-            Supplier
-          </Link>
-          {pathname !== '/supplier' && (
-            <>
-              <ChevronRight className="h-4 w-4 mx-2 text-white" />
-              <span className="font-medium">
-                {pathname.includes('/dashboard')
-                  ? 'Dashboard'
-                  : pathname.includes('/application')
-                  ? 'Application'
-                  : pathname.includes('/offers')
-                  ? 'Offers & Deals'
-                  : pathname.includes('/orders')
-                  ? 'Orders'
-                  : 'Page'}
+    <div className="flex h-screen bg-slate-50">
+      {/* Sidebar */}
+      <aside
+        className={cn(
+          'fixed left-0 top-0 z-40 h-full transition-all duration-300 bg-[#F5F5DC] shadow-lg',
+          isSidebarOpen ? 'w-64' : 'w-20'
+        )}>
+        <div className="flex h-full flex-col border-r border-[#D2B48C]">
+          {/* Sidebar Header */}
+          <div className="flex h-16 flex-col items-center justify-between px-4 mt-10">
+            {isSidebarOpen && (
+              <span className="text-2xl font-bold tracking-wide text-[#7B3F00]">
+                E-FURNISH
               </span>
-            </>
-          )}
-        </div>
-        <Button className="mt-2" onClick={handleLogout}>
-          Logout
-        </Button>
-      </div>
-
-      <div className="flex-1 container grid grid-cols-1 md:grid-cols-[240px_1fr] gap-8 py-8">
-        {/* Sidebar */}
-        <nav className="hidden md:block space-y-6">
-          <div className="space-y-3">
-            <h3 className="font-semibold">Supplier Portal</h3>
-
-            <div className="space-y-1">
-              <NavLink
-                href="/supplier/dashboard"
-                active={pathname === '/supplier/dashboard'}
-                icon={<LayoutDashboard className="h-4 w-4 mr-2" />}
-                disabled={supplierStatus !== 'approved'}>
-                Dashboard
-              </NavLink>
-
-              <NavLink
-                href="/supplier/application-status"
-                active={pathname === '/supplier/application-status'}
-                icon={<FileSignature className="h-4 w-4 mr-2" />}>
-                My Application
-              </NavLink>
-
-              <NavLink
-                href="/supplier/offers"
-                active={pathname.includes('/supplier/offers')}
-                icon={<Package className="h-4 w-4 mr-2" />}
-                disabled={supplierStatus !== 'approved'}>
-                My Offers & Deals
-              </NavLink>
-
-              <NavLink
-                href="/supplier/orders"
-                active={pathname.includes('/supplier/orders')}
-                icon={<Truck className="h-4 w-4 mr-2" />}
-                disabled={supplierStatus !== 'approved'}>
-                Orders from Owner
-              </NavLink>
-            </div>
+            )}
           </div>
-        </nav>
 
-        {/* Main content */}
-        <main className="flex-1">{children}</main>
-      </div>
+          {/* Sidebar Links */}
+          <div className="flex-1 overflow-y-auto px-4 pt-6 pb-4">
+            <nav className="space-y-2">
+              {links.map(link => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className={cn(
+                    'flex items-center space-x-3 rounded-lg px-4 py-2.5 text-sm font-medium transition-colors',
+                    pathname === link.href
+                      ? 'bg-[#7B3F00] text-white shadow-sm'
+                      : 'text-[#4B3A2D] hover:bg-[#EEDFCC] hover:text-[#7B3F00]'
+                  )}>
+                  {link.icon}
+                  {isSidebarOpen && <span>{link.label}</span>}
+                </Link>
+              ))}
+            </nav>
+          </div>
+
+          {/* User Info and Logout */}
+          <div className="px-4 py-4 border-t border-[#D2B48C]">
+            <button
+              onClick={handleLogout}
+              className="flex items-center space-x-3 rounded-lg px-4 py-2.5 text-[#4B3A2D] hover:bg-[#EEDFCC] hover:text-[#7B3F00] transition-colors">
+              <RiLogoutBoxLine size={20} />
+              {isSidebarOpen && <span>Logout</span>}
+            </button>
+          </div>
+        </div>
+      </aside>
+
+      <main
+        className={cn(
+          'flex-1 overflow-x-hidden transition-all duration-300',
+          isSidebarOpen ? 'ml-40' : 'ml-20'
+        )}>
+        {/* Content Container */}
+
+        <div className="container mx-auto px-4 py-6">{children}</div>
+      </main>
     </div>
   );
 }
