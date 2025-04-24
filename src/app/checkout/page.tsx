@@ -25,8 +25,8 @@ export default function CheckoutPage() {
   );
 
   if (!items || items.length === 0) {
-    router.push('/cart');
-    return null;
+    // router.push('/cart');
+    router.push('/checkout');
   }
 
   const handleNextStep = () => {

@@ -23,6 +23,11 @@ interface ImagePreview {
   previewUrl: string;
 }
 
+interface Feature {
+  name: string;
+  value: string;
+}
+
 const productSchema = z.object({
   title: z.string().min(3, 'Title must be at least 3 characters'),
   description: z.string().optional(),
@@ -54,7 +59,15 @@ const productSchema = z.object({
     .optional()
     .refine(val => !val || (!isNaN(Number(val)) && Number(val) >= 0), {
       message: 'Sales count must be a non-negative number'
-    })
+    }),
+  features: z
+    .array(
+      z.object({
+        name: z.string().min(1, 'Feature name is required'),
+        value: z.string().min(1, 'Feature value is required')
+      })
+    )
+    .optional()
 });
 
 type ProductFormData = z.infer<typeof productSchema>;
@@ -81,7 +94,8 @@ export default function ProductModal({
       price: '',
       stock: '',
       rating: '5',
-      sales_count: '0'
+      sales_count: '0',
+      features: []
     }
   });
 
@@ -93,7 +107,8 @@ export default function ProductModal({
     srcurl: '',
     gallery: [] as string[],
     rating: '',
-    sales_count: ''
+    sales_count: '',
+    features: [] as Feature[]
   });
 
   const [mainImagePreview, setMainImagePreview] = useState<ImagePreview | null>(
@@ -114,7 +129,8 @@ export default function ProductModal({
         price: product.price.toString(),
         stock: product.stock?.toString() || '0',
         rating: product.rating?.toString() || '',
-        sales_count: product.sales_count?.toString() || '0'
+        sales_count: product.sales_count?.toString() || '0',
+        features: product.features || []
       });
       setFormData({
         title: product.title,
@@ -124,10 +140,39 @@ export default function ProductModal({
         srcurl: product.srcurl,
         gallery: product.gallery || [],
         rating: product.rating?.toString() || '',
-        sales_count: product.sales_count?.toString() || '0'
+        sales_count: product.sales_count?.toString() || '0',
+        features: product.features || []
       });
     }
   }, [product, reset]);
+
+  const handleFeatureAdd = () => {
+    setFormData(prev => ({
+      ...prev,
+      features: [...prev.features, { name: '', value: '' }]
+    }));
+  };
+
+  const handleFeatureChange = (
+    index: number,
+    field: keyof Feature,
+    value: string
+  ) => {
+    const newFeatures = [...formData.features];
+    newFeatures[index][field] = value;
+    setFormData(prev => ({
+      ...prev,
+      features: newFeatures
+    }));
+  };
+
+  const handleFeatureRemove = (index: number) => {
+    const newFeatures = formData.features.filter((_, i) => i !== index);
+    setFormData(prev => ({
+      ...prev,
+      features: newFeatures
+    }));
+  };
 
   const handleImageSelect = (
     event: React.ChangeEvent<HTMLInputElement>,
@@ -289,7 +334,7 @@ export default function ProductModal({
     }
   };
 
-  const onSubmit = async (formData: ProductFormData) => {
+  const onSubmit = async (data: ProductFormData) => {
     try {
       setUploading(true);
 
@@ -308,15 +353,16 @@ export default function ProductModal({
       // Combine all data
       const productData = {
         ...(product?.id ? { id: product.id } : {}), // Only include ID for updates
-        title: formData.title,
-        description: formData.description || null,
-        category: formData.category,
-        price: parseFloat(formData.price),
-        stock: parseInt(formData.stock),
-        rating: formData.rating ? parseFloat(formData.rating) : null,
-        sales_count: formData.sales_count ? parseInt(formData.sales_count) : 0,
+        title: data.title,
+        description: data.description || null,
+        category: data.category,
+        price: parseFloat(data.price),
+        stock: parseInt(data.stock),
+        rating: data.rating ? parseFloat(data.rating) : null,
+        sales_count: data.sales_count ? parseInt(data.sales_count) : 0,
         srcurl: mainImageUrl,
-        gallery: [...existingGallery, ...newGalleryUrls]
+        gallery: [...existingGallery, ...newGalleryUrls],
+        features: formData.features
       };
 
       // Save to database
@@ -534,6 +580,48 @@ export default function ProductModal({
                 min="0"
                 step="1"
               />
+            </div>
+
+            {/* Features Field */}
+            <div className="space-y-3">
+              <label className="block text-sm font-medium text-slate-700">
+                Features
+              </label>
+              {formData.features.map((feature, index) => (
+                <div key={index} className="flex items-center space-x-2">
+                  <input
+                    type="text"
+                    value={feature.name}
+                    onChange={e =>
+                      handleFeatureChange(index, 'name', e.target.value)
+                    }
+                    placeholder="Feature Name"
+                    className="w-1/2 rounded-xl border border-slate-200 px-4 py-2 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                  />
+                  <input
+                    type="text"
+                    value={feature.value}
+                    onChange={e =>
+                      handleFeatureChange(index, 'value', e.target.value)
+                    }
+                    placeholder="Feature Value"
+                    className="w-1/2 rounded-xl border border-slate-200 px-4 py-2 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => handleFeatureRemove(index)}
+                    className="text-red-500 hover:text-red-700">
+                    <Trash2 size={20} />
+                  </button>
+                </div>
+              ))}
+              <button
+                type="button"
+                onClick={handleFeatureAdd}
+                className="flex items-center text-primary hover:text-primary/80">
+                <Plus size={20} className="mr-1" />
+                Add Feature
+              </button>
             </div>
 
             {/* Main Image Upload */}

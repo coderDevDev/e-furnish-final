@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
 import { authService } from '@/lib/services/authService';
 import { Input } from '@/components/ui/input';
@@ -26,12 +26,22 @@ import {
 } from '@/lib/services/locationService';
 import { useSearchParams } from 'next/navigation';
 import { RoleSelector } from '@/components/auth/RoleSelector';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle
+} from '@/components/ui/dialog';
 
 const registerSchema = z
   .object({
     fullName: z.string().min(2, 'Full name is required'),
     email: z.string().email('Invalid email address'),
-    phone: z.string().min(10, 'Phone number is required'),
+    phone: z
+      .string()
+      .min(10, 'Phone number is required')
+      .regex(/^\d+$/, 'Phone number can only contain digits'),
     password: z
       .string()
       .min(8, 'Password must be at least 8 characters')
@@ -69,6 +79,10 @@ export default function RegisterPage() {
   const [provinces, setProvinces] = useState<Province[]>([]);
   const [cities, setCities] = useState<City[]>([]);
   const [barangays, setBarangays] = useState<Barangay[]>([]);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [showConfirmationDialog, setShowConfirmationDialog] = useState(false);
+  const [registeredEmail, setRegisteredEmail] = useState('');
 
   const {
     register,
@@ -84,6 +98,12 @@ export default function RegisterPage() {
   const selectedRegionId = watch('address.region_id');
   const selectedProvinceId = watch('address.province_id');
   const selectedCityId = watch('address.city_id');
+
+  // Function to handle phone input to only allow numbers
+  const handlePhoneInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.replace(/\D/g, ''); // Remove non-numeric characters
+    setValue('phone', value);
+  };
 
   // Fetch regions on mount
   useEffect(() => {
@@ -210,10 +230,9 @@ export default function RegisterPage() {
         }
       });
 
-      toast.success(
-        'Registration successful! Please check your email to verify your account.'
-      );
-      window.location.href = `/login?role=${role}`;
+      // Show confirmation dialog instead of redirecting immediately
+      setRegisteredEmail(data.email);
+      setShowConfirmationDialog(true);
     } catch (error) {
       console.error('Registration error:', error);
       toast.error(
@@ -222,6 +241,11 @@ export default function RegisterPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleCloseDialog = () => {
+    setShowConfirmationDialog(false);
+    window.location.href = `/login?role=${role}`;
   };
 
   return (
@@ -287,6 +311,7 @@ export default function RegisterPage() {
                   {...register('phone')}
                   className={errors.phone ? 'border-red-500' : ''}
                   placeholder="+639"
+                  onChange={handlePhoneInput}
                 />
                 {errors.phone && (
                   <p className="text-xs text-red-500">{errors.phone.message}</p>
@@ -297,12 +322,23 @@ export default function RegisterPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="password">Password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  {...register('password')}
-                  className={errors.password ? 'border-red-500' : ''}
-                />
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? 'text' : 'password'}
+                    {...register('password')}
+                    className={
+                      errors.password ? 'border-red-500 pr-10' : 'pr-10'
+                    }
+                  />
+                  <button
+                    type="button"
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-500 hover:text-primary"
+                    onClick={() => setShowPassword(!showPassword)}
+                    tabIndex={-1}>
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
                 {errors.password && (
                   <p className="text-xs text-red-500">
                     {errors.password.message}
@@ -312,12 +348,27 @@ export default function RegisterPage() {
 
               <div className="space-y-2">
                 <Label htmlFor="confirmPassword">Confirm Password</Label>
-                <Input
-                  id="confirmPassword"
-                  type="password"
-                  {...register('confirmPassword')}
-                  className={errors.confirmPassword ? 'border-red-500' : ''}
-                />
+                <div className="relative">
+                  <Input
+                    id="confirmPassword"
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    {...register('confirmPassword')}
+                    className={
+                      errors.confirmPassword ? 'border-red-500 pr-10' : 'pr-10'
+                    }
+                  />
+                  <button
+                    type="button"
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-500 hover:text-primary"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    tabIndex={-1}>
+                    {showConfirmPassword ? (
+                      <EyeOff size={18} />
+                    ) : (
+                      <Eye size={18} />
+                    )}
+                  </button>
+                </div>
                 {errors.confirmPassword && (
                   <p className="text-xs text-red-500">
                     {errors.confirmPassword.message}
@@ -547,6 +598,26 @@ export default function RegisterPage() {
           </form>
         </div>
       </div>
+
+      {/* Email Confirmation Dialog */}
+      <Dialog
+        open={showConfirmationDialog}
+        onOpenChange={setShowConfirmationDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Verify Your Email</DialogTitle>
+            <DialogDescription>
+              Registration successful! Please check your email
+              <strong> ({registeredEmail}) </strong>
+              to verify your account. You need to verify your email before
+              logging in.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="mt-4 flex justify-end">
+            <Button onClick={handleCloseDialog}>Go to Login Page</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -5,7 +5,7 @@ import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { redirect } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 import OrdersFromOwnerPanel from '../components/OrdersFromOwnerPanel';
-import OrderHistory from '@/components/admin/suppliers/OrderHistory';
+import OrderHistoryCard from '../components/OrderHistoryCard';
 
 export default function OrdersPage() {
   const [isApprovedSupplier, setIsApprovedSupplier] = useState<boolean | null>(
@@ -96,10 +96,12 @@ export default function OrdersPage() {
   }
 
   return (
-    <div>
-      <h1 className="text-2xl font-bold mb-6">Orders from Owners</h1>
-      <OrdersFromOwnerPanel />
-      <OrderHistory supplierId={supplierId} />
+    <div className="px-4 sm:px-6 py-6 sm:py-8 space-y-6">
+      <h1 className="text-2xl sm:text-3xl font-bold mb-2">Manage Orders</h1>
+      <div className="space-y-6">
+        {/* <OrdersFromOwnerPanel /> */}
+        <OrderHistoryCard supplierId={supplierId} />
+      </div>
     </div>
   );
 }

@@ -72,8 +72,8 @@ export default function OffersPage() {
   }
 
   return (
-    <div className="container py-10">
-      <h1 className="text-2xl font-bold mb-6">My Offers</h1>
+    <div className="px-4 sm:px-6 py-6 sm:py-8">
+      <h1 className="text-2xl sm:text-3xl font-bold mb-4 sm:mb-6">My Offers</h1>
       <MyOffersList />
     </div>
   );

@@ -107,7 +107,7 @@ export default function AdminPage() {
           order => order.status === 'processing'
         ).length;
         const completedOrders = orders.filter(
-          order => order.status === 'completed'
+          order => order.status === 'completed' || order.status === 'delivered'
         ).length;
         const cancelledOrders = orders.filter(
           order => order.status === 'cancelled'
@@ -351,7 +351,7 @@ export default function AdminPage() {
           </div>
 
           {/* Charts */}
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          <div className="mt-4 grid grid-cols-1 gap-6 lg:grid-cols-2">
             <Card>
               <CardContent className="p-6">
                 <h2 className="mb-4 text-lg font-semibold">
@@ -395,7 +395,7 @@ export default function AdminPage() {
             </Card>
           </div>
 
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+          <div className="mt-4 grid grid-cols-1 gap-6 lg:grid-cols-3">
             {/* Order Status Chart */}
             <Card>
               <CardContent className="p-6">
@@ -454,7 +454,8 @@ export default function AdminPage() {
                             <td className="py-3">
                               <span
                                 className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${
-                                  order.status === 'completed'
+                                  order.status === 'completed' ||
+                                  order.status === 'delivered'
                                     ? 'bg-green-100 text-green-800'
                                     : order.status === 'pending'
                                     ? 'bg-yellow-100 text-yellow-800'

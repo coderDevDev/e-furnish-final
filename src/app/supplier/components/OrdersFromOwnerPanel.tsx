@@ -20,8 +20,22 @@ import {
   DialogFooter
 } from '@/components/ui/dialog';
 import { format } from 'date-fns';
-import { Loader2, Eye, Package, Truck, CheckCircle } from 'lucide-react';
+import {
+  Loader2,
+  Eye,
+  Package,
+  Truck,
+  CheckCircle,
+  InboxIcon
+} from 'lucide-react';
 import { toast } from 'sonner';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription
+} from '@/components/ui/card';
 
 type Order = {
   id: string;
@@ -192,212 +206,218 @@ export default function OrdersFromOwnerPanel() {
   }
 
   return (
-    <div>
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Order ID</TableHead>
-            <TableHead>Date</TableHead>
-            <TableHead>From</TableHead>
-            <TableHead>Amount</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Action</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {orders.map(order => (
-            <TableRow key={order.id}>
-              <TableCell className="font-medium">
-                {order.id.slice(0, 8)}
-              </TableCell>
-              <TableCell>
-                {format(new Date(order.created_at), 'MMM d, yyyy')}
-              </TableCell>
-              <TableCell>{order.admin_name}</TableCell>
-              <TableCell>₱{order.total_amount.toLocaleString()}</TableCell>
-              <TableCell>{getStatusBadge(order.status)}</TableCell>
-              <TableCell>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => viewOrderDetails(order)}>
-                  <Eye className="h-4 w-4 mr-1" />
-                  View
-                </Button>
-              </TableCell>
+    <Card>
+      <CardHeader>
+        <CardTitle>Orders</CardTitle>
+        <CardDescription>Manage your orders</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Order ID</TableHead>
+              <TableHead>Date</TableHead>
+              <TableHead>From</TableHead>
+              <TableHead>Amount</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Action</TableHead>
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+          </TableHeader>
+          <TableBody>
+            {orders.map(order => (
+              <TableRow key={order.id}>
+                <TableCell className="font-medium">
+                  {order.id.slice(0, 8)}
+                </TableCell>
+                <TableCell>
+                  {format(new Date(order.created_at), 'MMM d, yyyy')}
+                </TableCell>
+                <TableCell>{order.admin_name}</TableCell>
+                <TableCell>₱{order.total_amount.toLocaleString()}</TableCell>
+                <TableCell>{getStatusBadge(order.status)}</TableCell>
+                <TableCell>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => viewOrderDetails(order)}>
+                    <Eye className="h-4 w-4 mr-1" />
+                    View
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
 
-      {/* Order Details Dialog */}
-      <Dialog open={showOrderDetails} onOpenChange={setShowOrderDetails}>
-        <DialogContent className="max-w-xl">
-          <DialogHeader>
-            <DialogTitle>Order Details</DialogTitle>
-          </DialogHeader>
+        {/* Order Details Dialog */}
+        <Dialog open={showOrderDetails} onOpenChange={setShowOrderDetails}>
+          <DialogContent className="max-w-xl">
+            <DialogHeader>
+              <DialogTitle>Order Details</DialogTitle>
+            </DialogHeader>
 
-          {selectedOrder && (
-            <div className="space-y-6">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm font-medium">Order ID</p>
-                  <p>{selectedOrder.id}</p>
+            {selectedOrder && (
+              <div className="space-y-6">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm font-medium">Order ID</p>
+                    <p>{selectedOrder.id}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium">Date</p>
+                    <p>
+                      {format(
+                        new Date(selectedOrder.created_at),
+                        'MMM d, yyyy h:mm a'
+                      )}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium">From</p>
+                    <p>{selectedOrder.admin_name}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium">Status</p>
+                    <p>{getStatusBadge(selectedOrder.status)}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium">Delivery Date</p>
+                    <p>
+                      {format(
+                        new Date(selectedOrder.delivery_date),
+                        'MMM d, yyyy'
+                      )}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium">Payment Terms</p>
+                    <p>
+                      {selectedOrder.payment_terms === 'cod'
+                        ? 'Cash on Delivery'
+                        : selectedOrder.payment_terms === '15_days'
+                        ? 'Net 15 Days'
+                        : selectedOrder.payment_terms === '30_days'
+                        ? 'Net 30 Days'
+                        : selectedOrder.payment_terms === '60_days'
+                        ? 'Net 60 Days'
+                        : selectedOrder.payment_terms}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-sm font-medium">Date</p>
-                  <p>
-                    {format(
-                      new Date(selectedOrder.created_at),
-                      'MMM d, yyyy h:mm a'
-                    )}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium">From</p>
-                  <p>{selectedOrder.admin_name}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium">Status</p>
-                  <p>{getStatusBadge(selectedOrder.status)}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium">Delivery Date</p>
-                  <p>
-                    {format(
-                      new Date(selectedOrder.delivery_date),
-                      'MMM d, yyyy'
-                    )}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium">Payment Terms</p>
-                  <p>
-                    {selectedOrder.payment_terms === 'cod'
-                      ? 'Cash on Delivery'
-                      : selectedOrder.payment_terms === '15_days'
-                      ? 'Net 15 Days'
-                      : selectedOrder.payment_terms === '30_days'
-                      ? 'Net 30 Days'
-                      : selectedOrder.payment_terms === '60_days'
-                      ? 'Net 60 Days'
-                      : selectedOrder.payment_terms}
-                  </p>
-                </div>
-              </div>
 
-              <div>
-                <p className="text-sm font-medium mb-2">Items</p>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Item</TableHead>
-                      <TableHead>Quantity</TableHead>
-                      <TableHead>Price</TableHead>
-                      <TableHead>Total</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {selectedOrder.order_items.map((item, index) => (
-                      <TableRow key={index}>
-                        <TableCell>{item.name}</TableCell>
-                        <TableCell>{item.quantity}</TableCell>
-                        <TableCell>₱{item.price.toLocaleString()}</TableCell>
-                        <TableCell>
-                          ₱{(item.quantity * item.price).toLocaleString()}
-                        </TableCell>
+                <div>
+                  <p className="text-sm font-medium mb-2">Items</p>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Item</TableHead>
+                        <TableHead>Quantity</TableHead>
+                        <TableHead>Price</TableHead>
+                        <TableHead>Total</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-
-              <div className="flex justify-end">
-                <div className="bg-muted p-4 rounded-md">
-                  <p className="font-medium">
-                    Total: ₱{selectedOrder.total_amount.toLocaleString()}
-                  </p>
+                    </TableHeader>
+                    <TableBody>
+                      {selectedOrder.order_items.map((item, index) => (
+                        <TableRow key={index}>
+                          <TableCell>{item.name}</TableCell>
+                          <TableCell>{item.quantity}</TableCell>
+                          <TableCell>₱{item.price.toLocaleString()}</TableCell>
+                          <TableCell>
+                            ₱{(item.quantity * item.price).toLocaleString()}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
                 </div>
-              </div>
 
-              {selectedOrder.notes && (
-                <div>
-                  <p className="text-sm font-medium">Notes</p>
-                  <p className="text-sm">{selectedOrder.notes}</p>
-                </div>
-              )}
-
-              {/* Action buttons based on order status */}
-              {selectedOrder.status === 'pending' && (
-                <div className="flex justify-end gap-2">
-                  <Button
-                    variant="destructive"
-                    disabled={updating}
-                    onClick={() =>
-                      updateOrderStatus(selectedOrder.id, 'cancelled')
-                    }>
-                    Cancel Order
-                  </Button>
-                  <Button
-                    disabled={updating}
-                    onClick={() =>
-                      updateOrderStatus(selectedOrder.id, 'approved')
-                    }>
-                    {updating ? (
-                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                    ) : (
-                      <CheckCircle className="h-4 w-4 mr-2" />
-                    )}
-                    Accept Order
-                  </Button>
-                </div>
-              )}
-
-              {selectedOrder.status === 'approved' && (
                 <div className="flex justify-end">
-                  <Button
-                    disabled={updating}
-                    onClick={() =>
-                      updateOrderStatus(selectedOrder.id, 'shipped')
-                    }>
-                    {updating ? (
-                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                    ) : (
-                      <Truck className="h-4 w-4 mr-2" />
-                    )}
-                    Mark as Shipped
-                  </Button>
+                  <div className="bg-muted p-4 rounded-md">
+                    <p className="font-medium">
+                      Total: ₱{selectedOrder.total_amount.toLocaleString()}
+                    </p>
+                  </div>
                 </div>
-              )}
 
-              {selectedOrder.status === 'shipped' && (
-                <div className="flex justify-end">
-                  <Button
-                    disabled={updating}
-                    onClick={() =>
-                      updateOrderStatus(selectedOrder.id, 'delivered')
-                    }>
-                    {updating ? (
-                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                    ) : (
-                      <Package className="h-4 w-4 mr-2" />
-                    )}
-                    Mark as Delivered
-                  </Button>
-                </div>
-              )}
-            </div>
-          )}
+                {selectedOrder.notes && (
+                  <div>
+                    <p className="text-sm font-medium">Notes</p>
+                    <p className="text-sm">{selectedOrder.notes}</p>
+                  </div>
+                )}
 
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setShowOrderDetails(false)}>
-              Close
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
+                {/* Action buttons based on order status */}
+                {selectedOrder.status === 'pending' && (
+                  <div className="flex justify-end gap-2">
+                    <Button
+                      variant="destructive"
+                      disabled={updating}
+                      onClick={() =>
+                        updateOrderStatus(selectedOrder.id, 'cancelled')
+                      }>
+                      Cancel Order
+                    </Button>
+                    <Button
+                      disabled={updating}
+                      onClick={() =>
+                        updateOrderStatus(selectedOrder.id, 'approved')
+                      }>
+                      {updating ? (
+                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      ) : (
+                        <CheckCircle className="h-4 w-4 mr-2" />
+                      )}
+                      Accept Order
+                    </Button>
+                  </div>
+                )}
+
+                {selectedOrder.status === 'approved' && (
+                  <div className="flex justify-end">
+                    <Button
+                      disabled={updating}
+                      onClick={() =>
+                        updateOrderStatus(selectedOrder.id, 'shipped')
+                      }>
+                      {updating ? (
+                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      ) : (
+                        <Truck className="h-4 w-4 mr-2" />
+                      )}
+                      Mark as Shipped
+                    </Button>
+                  </div>
+                )}
+
+                {selectedOrder.status === 'shipped' && (
+                  <div className="flex justify-end">
+                    <Button
+                      disabled={updating}
+                      onClick={() =>
+                        updateOrderStatus(selectedOrder.id, 'delivered')
+                      }>
+                      {updating ? (
+                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      ) : (
+                        <Package className="h-4 w-4 mr-2" />
+                      )}
+                      Mark as Delivered
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )}
+
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setShowOrderDetails(false)}>
+                Close
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </CardContent>
+    </Card>
   );
 }

@@ -148,13 +148,13 @@ export default function ApprovedSuppliersList() {
                         <Package className="h-4 w-4" />
                         <span>View Offers</span>
                       </Button>
-                      <Button
+                      {/* <Button
                         size="sm"
                         className="flex items-center gap-1"
                         onClick={() => openOrderModal(supplier)}>
                         <ShoppingCart className="h-4 w-4" />
                         <span>Place Order</span>
-                      </Button>
+                      </Button> */}
                     </div>
                   </TableCell>
                 </TableRow>
@@ -166,24 +166,29 @@ export default function ApprovedSuppliersList() {
 
       {/* Supplier Offers Panel */}
       <Dialog open={showOffersPanel} onOpenChange={setShowOffersPanel}>
-        <DialogContent className="max-w-4xl">
-          <DialogHeader>
-            <DialogTitle>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-4 sm:p-6">
+          <DialogHeader className="mb-4">
+            <DialogTitle className="text-xl">
               {selectedSupplier?.business_name} - Available Offers
             </DialogTitle>
+            <DialogDescription>
+              Browse offers from this supplier and place orders
+            </DialogDescription>
           </DialogHeader>
 
           {selectedSupplier && (
-            <SupplierOffersPanel
-              supplierId={selectedSupplier.id}
-              onOrderPlace={() => {
-                setShowOffersPanel(false);
-                openOrderModal(selectedSupplier);
-              }}
-            />
+            <div className="mt-2">
+              <SupplierOffersPanel
+                supplierId={selectedSupplier.id}
+                onOrderPlace={() => {
+                  setShowOffersPanel(false);
+                  openOrderModal(selectedSupplier);
+                }}
+              />
+            </div>
           )}
 
-          <DialogFooter>
+          <DialogFooter className="mt-6 sm:mt-8">
             <Button variant="outline" onClick={() => setShowOffersPanel(false)}>
               Close
             </Button>

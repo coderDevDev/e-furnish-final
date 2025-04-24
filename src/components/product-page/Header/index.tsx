@@ -29,6 +29,7 @@ import { toast } from 'sonner';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { FIRST_DISTRICT_MUNICIPALITIES } from '@/lib/utils/shipping';
 import { customizationService } from '@/lib/services/customizationService';
+import { supabase } from '@/lib/supabase/config';
 
 const Header = ({ data }: { data: Product }) => {
   const [customization, setCustomization] =
@@ -88,6 +89,29 @@ const Header = ({ data }: { data: Product }) => {
     return Math.round(data.price * 0.3); // 30% downpayment
   };
 
+  const [averageRating, setAverageRating] = useState(0);
+
+  useEffect(() => {
+    const fetchAverageRating = async () => {
+      // Calculate average rating
+      const { data: ratingData } = await supabase
+        .from('reviews')
+        .select('rating')
+        .eq('product_id', data.id)
+        .eq('status', 'published');
+
+      console.log({ data });
+
+      if (ratingData && ratingData.length > 0) {
+        const sum = ratingData.reduce((acc, curr) => acc + curr.rating, 0);
+        setAverageRating(parseFloat((sum / ratingData.length).toFixed(1)));
+      } else {
+        setAverageRating(0);
+      }
+    };
+    fetchAverageRating();
+  }, [data.id]);
+
   return (
     <>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -97,23 +121,21 @@ const Header = ({ data }: { data: Product }) => {
         <div>
           <h1
             className={cn([
-              integralCF.className,
-              'text-2xl md:text-[40px] md:leading-[40px] mb-3 md:mb-3.5 capitalize'
+              'text-2xl md:text-[40px] md:leading-[40px] mb-3 md:mb-3.5 font-bold'
             ])}>
             {data.title}
           </h1>
           <div className="flex items-center mb-3 sm:mb-3.5">
             <Rating
-              initialValue={data.rating}
+              initialValue={averageRating}
               allowFraction
               SVGclassName="inline-block"
               emptyClassName="fill-gray-50"
               size={25}
               readonly
             />
-            <span className="text-black text-xs sm:text-sm ml-[11px] sm:ml-[13px] pb-0.5 sm:pb-0">
-              {data.rating.toFixed(1)}
-              <span className="text-black/60">/5</span>
+            <span className="ml-2 text-sm text-gray-600">
+              ({data.totalReviews || 0} reviews)
             </span>
           </div>
           <div className="flex items-center space-x-2.5 sm:space-x-3 mb-5">

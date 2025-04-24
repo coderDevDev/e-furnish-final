@@ -51,7 +51,7 @@ export async function POST(request: Request) {
                 <div>
                   <strong>${item.name}</strong><br>
                   Quantity: ${item.quantity}<br>
-                  Price: ₱${item.price.toLocaleString()}<br>
+                  Price: ₱${item.price.toFixed(2)}<br>
                   ${
                     item.customization
                       ? `<div style="margin-top: 8px; font-size: 14px; color: #666;">
@@ -69,7 +69,7 @@ export async function POST(request: Request) {
               .join('')}
             
             <div style="border-top: 1px solid #dee2e6; margin-top: 10px; padding-top: 10px;">
-              <strong>Total Amount: ₱${order.total_amount.toLocaleString()}</strong>
+              <strong>Total Amount: ₱${order.total_amount.toFixed(2)}</strong>
             </div>
           </div>
           

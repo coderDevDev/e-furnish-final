@@ -123,12 +123,15 @@ export function PaymentForm({ onNext }: PaymentFormProps) {
           : undefined
       });
 
-      if (error) throw error;
-      if (!order) throw new Error('Failed to create order');
+      // if (error) throw error;
+      // if (!order) throw new Error('Failed to create order');
 
-      dispatch(clearCart());
       setPlacedOrderId(order.id);
       setSuccessDialogOpen(true);
+      toast.success(
+        'Order placed successfully! Check your email for confirmation.'
+      );
+      dispatch(clearCart());
     } catch (error) {
       console.error('Order error:', error);
       toast.error('Failed to place order. Please try again.');
@@ -262,6 +265,7 @@ export function PaymentForm({ onNext }: PaymentFormProps) {
           <div className="space-y-4">
             <p className="text-sm text-gray-600">
               Thank you for your order. We'll start processing it right away.
+              Please check your email for the order confirmation.
             </p>
             <div className="flex justify-end gap-3">
               <Button

@@ -70,41 +70,51 @@ export default function SupplierHomePage() {
   // If not a supplier yet, show registration info
   if (!supplierStatus) {
     return (
-      <div className="max-w-3xl mx-auto">
-        <h1 className="text-3xl font-bold mb-6">Become a Supplier</h1>
-        <Card>
-          <CardHeader>
-            <CardTitle>Join Our Supplier Network</CardTitle>
-            <CardDescription>
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
+        <h1 className="text-2xl sm:text-3xl font-bold mb-4 sm:mb-6">
+          Become a Supplier
+        </h1>
+        <Card className="shadow-sm">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-xl sm:text-2xl">
+              Join Our Supplier Network
+            </CardTitle>
+            <CardDescription className="text-sm sm:text-base">
               Partner with us to provide quality materials and supplies to
               woodworking craftsmen
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              <p>
+              <p className="text-sm sm:text-base">
                 As a supplier, you can post offers, receive orders, and grow
                 your business with our community of craftsmen.
               </p>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4">
-                <div className="flex flex-col items-center text-center p-4 border rounded-lg">
-                  <FileSignature className="h-10 w-10 text-primary mb-2" />
-                  <h3 className="font-medium">Easy Application</h3>
-                  <p className="text-sm text-muted-foreground">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 pt-3 sm:pt-4">
+                <div className="flex flex-col items-center text-center p-3 sm:p-4 border rounded-lg">
+                  <FileSignature className="h-8 w-8 sm:h-10 sm:w-10 text-primary mb-2" />
+                  <h3 className="font-medium text-sm sm:text-base">
+                    Easy Application
+                  </h3>
+                  <p className="text-xs sm:text-sm text-muted-foreground">
                     Simple registration process to get started
                   </p>
                 </div>
-                <div className="flex flex-col items-center text-center p-4 border rounded-lg">
-                  <Package className="h-10 w-10 text-primary mb-2" />
-                  <h3 className="font-medium">Post Offers</h3>
-                  <p className="text-sm text-muted-foreground">
+                <div className="flex flex-col items-center text-center p-3 sm:p-4 border rounded-lg">
+                  <Package className="h-8 w-8 sm:h-10 sm:w-10 text-primary mb-2" />
+                  <h3 className="font-medium text-sm sm:text-base">
+                    Post Offers
+                  </h3>
+                  <p className="text-xs sm:text-sm text-muted-foreground">
                     List your materials and set your own prices
                   </p>
                 </div>
-                <div className="flex flex-col items-center text-center p-4 border rounded-lg">
-                  <Truck className="h-10 w-10 text-primary mb-2" />
-                  <h3 className="font-medium">Manage Orders</h3>
-                  <p className="text-sm text-muted-foreground">
+                <div className="flex flex-col items-center text-center p-3 sm:p-4 border rounded-lg">
+                  <Truck className="h-8 w-8 sm:h-10 sm:w-10 text-primary mb-2" />
+                  <h3 className="font-medium text-sm sm:text-base">
+                    Manage Orders
+                  </h3>
+                  <p className="text-xs sm:text-sm text-muted-foreground">
                     Efficiently process orders from craftsmen
                   </p>
                 </div>
@@ -124,22 +134,28 @@ export default function SupplierHomePage() {
   // If has pending application
   if (supplierStatus === 'pending') {
     return (
-      <div className="max-w-3xl mx-auto">
-        <h1 className="text-3xl font-bold mb-6">Supplier Application</h1>
-        <Card>
-          <CardHeader>
-            <CardTitle>Application In Review</CardTitle>
-            <CardDescription>
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
+        <h1 className="text-2xl sm:text-3xl font-bold mb-4 sm:mb-6">
+          Supplier Application
+        </h1>
+        <Card className="shadow-sm">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-xl sm:text-2xl">
+              Application In Review
+            </CardTitle>
+            <CardDescription className="text-sm sm:text-base">
               Your supplier application is currently being reviewed
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <p className="mb-4">
+            <p className="mb-4 text-sm sm:text-base">
               Thank you for applying to be a supplier. Our team is currently
               reviewing your application and documents. You will be notified
               once a decision has been made.
             </p>
-            <p>You can check the status of your application at any time.</p>
+            <p className="text-sm sm:text-base">
+              You can check the status of your application at any time.
+            </p>
           </CardContent>
           <CardFooter>
             <Button asChild className="w-full">
@@ -154,7 +170,6 @@ export default function SupplierHomePage() {
   }
 
   // If approved, redirect to dashboard
-
   console.log({ supplierStatus });
   if (supplierStatus === 'approved') {
     redirect('/supplier/dashboard');
@@ -162,33 +177,37 @@ export default function SupplierHomePage() {
 
   // If rejected
   return (
-    <div className="max-w-3xl mx-auto">
-      <h1 className="text-3xl font-bold mb-6">Supplier Application</h1>
-      <Card>
-        <CardHeader>
-          <CardTitle>Application Was Not Approved</CardTitle>
-          <CardDescription>
+    <div className="max-w-3xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
+      <h1 className="text-2xl sm:text-3xl font-bold mb-4 sm:mb-6">
+        Supplier Application
+      </h1>
+      <Card className="shadow-sm">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-xl sm:text-2xl">
+            Application Was Not Approved
+          </CardTitle>
+          <CardDescription className="text-sm sm:text-base">
             Unfortunately, your application was not approved at this time
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <p className="mb-4">
+          <p className="mb-4 text-sm sm:text-base">
             We're sorry, but your supplier application was not approved. You can
             check the details on your application status page to see any
             feedback provided.
           </p>
-          <p>
+          <p className="text-sm sm:text-base">
             You're welcome to reapply with updated information or additional
             documentation.
           </p>
         </CardContent>
-        <CardFooter className="flex justify-between">
-          <Button asChild variant="outline">
+        <CardFooter className="flex flex-col sm:flex-row justify-between space-y-3 sm:space-y-0 sm:space-x-3">
+          <Button asChild variant="outline" className="w-full sm:w-auto">
             <Link href="/supplier/application-status">
               View Application Status
             </Link>
           </Button>
-          <Button asChild>
+          <Button asChild className="w-full sm:w-auto">
             <Link href="/supplier/register">Apply Again</Link>
           </Button>
         </CardFooter>

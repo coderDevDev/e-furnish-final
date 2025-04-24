@@ -16,8 +16,8 @@ export default function SupplierLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className={`${inter.className} min-h-screen flex flex-col`}>
-      <div className="flex-1 flex justify-center">
+    <div className={`${inter.className} min-h-screen`}>
+      <div className="flex-1 flex justify-center py-4 sm:py-6">
         <div className="w-full max-w-7xl">{children}</div>
       </div>
       <Toaster position="top-right" />

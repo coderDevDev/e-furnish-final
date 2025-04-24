@@ -35,6 +35,22 @@ export default function OrderDetailsPage({ params }: OrderDetailsProps) {
     }
   };
 
+  const handleCancelOrder = async () => {
+    const confirmCancel = window.confirm(
+      'Are you sure you want to cancel this order?'
+    );
+    if (!confirmCancel) return;
+
+    try {
+      const updatedOrder = await authService.cancelOrder(order.id);
+      setOrder(updatedOrder);
+      alert('Order has been cancelled.');
+    } catch (error) {
+      console.error('Error cancelling order:', error);
+      alert('Failed to cancel order. Please try again.');
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-[400px]">
@@ -102,8 +118,8 @@ export default function OrderDetailsPage({ params }: OrderDetailsProps) {
                     <div className="w-24 h-24 relative rounded-md overflow-hidden bg-gray-100 flex-shrink-0">
                       <Image
                         src={
-                          item.product.gallery?.[0] ||
-                          item.product.srcurl ||
+                          item.product?.gallery?.[0] ||
+                          item.product?.srcurl ||
                           '/placeholder-product.png'
                         }
                         alt={item.product.title || item.product.name}
@@ -123,7 +139,7 @@ export default function OrderDetailsPage({ params }: OrderDetailsProps) {
                       <p className="text-gray-600">Quantity: {item.quantity}</p>
                       <div className="mt-2">
                         <p className="text-lg font-semibold">
-                          ₱{item.product.price.toLocaleString()}
+                          ₱{item.product.price.toFixed(2)}
                         </p>
                         {item.customization && (
                           <div className="mt-2 text-sm text-gray-600 bg-gray-50 p-3 rounded-md">
@@ -155,7 +171,7 @@ export default function OrderDetailsPage({ params }: OrderDetailsProps) {
                                       </span>
                                       {custom.cost > 0 && (
                                         <span className="text-gray-700">
-                                          +₱{custom.cost.toLocaleString()}
+                                          +₱{custom.cost.toFixed(2)}
                                         </span>
                                       )}
                                     </div>
@@ -165,8 +181,9 @@ export default function OrderDetailsPage({ params }: OrderDetailsProps) {
                                   <span>Total Customization:</span>
                                   <span>
                                     ₱
-                                    {item.customization.totalCustomizationCost?.toLocaleString() ||
-                                      '0'}
+                                    {item.customization.totalCustomizationCost?.toFixed(
+                                      2
+                                    ) || '0.00'}
                                   </span>
                                 </div>
                               </div>
@@ -200,7 +217,9 @@ export default function OrderDetailsPage({ params }: OrderDetailsProps) {
                                     <span>Total Customization:</span>
                                     <span>
                                       ₱
-                                      {item.customization.totalCustomizationCost.toLocaleString()}
+                                      {item.customization.totalCustomizationCost.toFixed(
+                                        2
+                                      )}
                                     </span>
                                   </div>
                                 )}
@@ -256,14 +275,16 @@ export default function OrderDetailsPage({ params }: OrderDetailsProps) {
             <div className="flex justify-between items-center">
               <span className="text-gray-600">Payment Method</span>
               <span className="font-medium uppercase">
-                {order.payment_method}
+                {order.payment_method === 'cod'
+                  ? 'Cash on Delivery (COD)'
+                  : order.payment_method}
               </span>
             </div>
             {order.payment_method === 'cod' && order.change_needed && (
               <div className="flex justify-between items-center">
                 <span className="text-gray-600">Change Needed For</span>
                 <span className="font-medium">
-                  ₱{order.change_needed.toLocaleString()}
+                  ₱{order.change_needed.toFixed(2)}
                 </span>
               </div>
             )}
@@ -271,19 +292,21 @@ export default function OrderDetailsPage({ params }: OrderDetailsProps) {
             <div className="flex justify-between items-center text-lg">
               <span className="font-medium">Total Amount</span>
               <span className="font-bold">
-                ₱{order.total_amount.toLocaleString()}
+                ₱{order.total_amount.toFixed(2)}
               </span>
             </div>
           </div>
         </div>
 
         {/* Actions */}
-        {/* <div className="flex justify-end space-x-4">
+        <div className="flex justify-end space-x-4">
           <Button variant="outline" asChild>
             <Link href="/orders">Back to Orders</Link>
           </Button>
-          <Button>Track Order</Button>
-        </div> */}
+          {order.status !== 'cancelled' && (
+            <Button onClick={handleCancelOrder}>Cancel Order</Button>
+          )}
+        </div>
       </div>
     </main>
   );

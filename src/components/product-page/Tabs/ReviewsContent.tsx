@@ -22,7 +22,11 @@ import { Label } from '@/components/ui/label';
 import ReviewCard from '@/components/common/ReviewCard';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { toast } from 'sonner';
-import { Loader2, Star, StarHalf } from 'lucide-react';
+import { Loader2, Star, AlertCircle } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+// import { Rating } from 'react-simple-star-rating';
+
+import Rating from '@/components/ui/Rating';
 
 // Update interface to match the database structure
 interface Review {
@@ -57,11 +61,11 @@ interface ReviewsContentProps {
 }
 
 const ReviewsContent = ({ productId }: ReviewsContentProps) => {
-  console.log({ productId });
   const [reviews, setReviews] = useState<ReviewWithUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [sortBy, setSortBy] = useState('latest');
   const [totalReviews, setTotalReviews] = useState(0);
+  const [averageRating, setAverageRating] = useState(0);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const supabase = createClientComponentClient();
@@ -72,6 +76,9 @@ const ReviewsContent = ({ productId }: ReviewsContentProps) => {
     comment: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [userCanReview, setUserCanReview] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [purchaseStatus, setPurchaseStatus] = useState<string | null>(null);
 
   const fetchReviews = async (reset = false) => {
     try {
@@ -120,10 +127,22 @@ const ReviewsContent = ({ productId }: ReviewsContentProps) => {
         .eq('product_id', productId)
         .eq('status', 'published');
 
+      // Calculate average rating
+      const { data: ratingData } = await supabase
+        .from('reviews')
+        .select('rating')
+        .eq('product_id', productId)
+        .eq('status', 'published');
+
+      if (ratingData && ratingData.length > 0) {
+        const sum = ratingData.reduce((acc, curr) => acc + curr.rating, 0);
+        setAverageRating(parseFloat((sum / ratingData.length).toFixed(1)));
+      }
+
       // Fetch user details for each review
       const reviewsWithUserDetails = await Promise.all(
-        (reviewsData || []).map(async (review: Review) => {
-          const { data: userData } = await supabase
+        reviewsData.map(async (review: Review) => {
+          const { data: userDetails } = await supabase
             .from('profiles')
             .select('full_name, avatar_url, email')
             .eq('id', review.user_id)
@@ -131,13 +150,13 @@ const ReviewsContent = ({ productId }: ReviewsContentProps) => {
 
           return {
             ...review,
-            user_details: userData
-          } as ReviewWithUser;
+            user_details: userDetails
+          };
         })
       );
 
       setTotalReviews(totalCount || 0);
-      setHasMore((totalCount || 0) > currentPage * perPage);
+      setHasMore(reviewsWithUserDetails.length === perPage);
 
       if (reset) {
         setReviews(reviewsWithUserDetails);
@@ -153,54 +172,107 @@ const ReviewsContent = ({ productId }: ReviewsContentProps) => {
     }
   };
 
-  useEffect(() => {
-    if (productId) {
-      fetchReviews(true);
+  const checkUserCanReview = async () => {
+    try {
+      const {
+        data: { session }
+      } = await supabase.auth.getSession();
+      setIsLoggedIn(!!session);
+
+      if (!session) return;
+
+      // Check if user has purchased and received this product
+      const { data: orders } = await supabase
+        .from('orders')
+        .select('items, status')
+        .eq('user_id', session.user.id);
+
+      if (!orders || orders.length === 0) {
+        setPurchaseStatus('not_purchased');
+        return;
+      }
+
+      // Check if product_id is in the items array
+      const purchasedItems = orders.some(order =>
+        order.items.some(item => item.product_id === parseInt(productId))
+      );
+
+      if (!purchasedItems) {
+        setPurchaseStatus('not_purchased');
+        return;
+      }
+
+      // Check if any order is delivered
+      const deliveredItems = orders.filter(order =>
+        order.items.some(
+          item =>
+            item.product_id === parseInt(productId) &&
+            order.status === 'delivered'
+        )
+      );
+
+      if (deliveredItems.length === 0) {
+        setPurchaseStatus('not_delivered');
+        return;
+      }
+
+      // Check if user already reviewed this product
+      const { data: existingReview } = await supabase
+        .from('reviews')
+        .select('*')
+        .eq('product_id', productId)
+        .eq('user_id', session.user.id)
+        .single();
+
+      if (existingReview) {
+        setPurchaseStatus('already_reviewed');
+        return;
+      }
+
+      // User can review
+      setPurchaseStatus('can_review');
+      setUserCanReview(true);
+    } catch (error) {
+      console.error('Error checking if user can review:', error);
     }
+  };
+
+  useEffect(() => {
+    fetchReviews(true);
+    checkUserCanReview();
   }, [productId, sortBy]);
+
+  const handleSortChange = (value: string) => {
+    setSortBy(value);
+    fetchReviews(true);
+  };
 
   const handleLoadMore = () => {
     setPage(prev => prev + 1);
     fetchReviews();
   };
 
-  const handleSortChange = (value: string) => {
-    setSortBy(value);
-  };
-
   const handleSubmitReview = async () => {
+    if (!newReview.comment.trim()) {
+      toast.error('Please enter a comment');
+      return;
+    }
+
     try {
       setIsSubmitting(true);
-
-      // Get current user
-      const {
-        data: { user },
-        error: userError
-      } = await supabase.auth.getUser();
-
-      if (userError || !user) {
-        toast.error('Please login to submit a review');
-        return;
-      }
-
-      // Submit review
-      const { error: reviewError } = await supabase.from('reviews').insert({
+      const { error } = await supabase.from('reviews').insert({
+        user_id: supabase.auth.user()?.id,
         product_id: productId,
-        user_id: user.id,
         rating: newReview.rating,
-        comment: newReview.comment || null,
+        comment: newReview.comment,
         status: 'published'
       });
 
-      if (reviewError) throw reviewError;
+      if (error) throw error;
 
-      // Reset form and close dialog
-      setNewReview({ rating: 5, comment: '' });
+      toast.success('Review submitted successfully');
       setShowReviewDialog(false);
-
-      // Refresh reviews
       fetchReviews(true);
-      toast.success('Review submitted successfully!');
     } catch (error) {
       console.error('Error submitting review:', error);
       toast.error('Failed to submit review');
@@ -211,20 +283,34 @@ const ReviewsContent = ({ productId }: ReviewsContentProps) => {
 
   const StarRating = () => {
     return (
-      <div className="flex items-center space-x-1">
-        {[1, 2, 3, 4, 5].map(star => (
-          <button
-            key={star}
-            type="button"
-            onClick={() => setNewReview(prev => ({ ...prev, rating: star }))}
-            className={`p-1 ${
-              star <= newReview.rating ? 'text-yellow-400' : 'text-gray-300'
-            }`}>
-            <Star className="w-8 h-8" />
-          </button>
-        ))}
-      </div>
+      <Rating
+        initialValue={newReview.rating}
+        allowFraction
+        SVGclassName="inline-block"
+        size={30}
+        transition
+        fillColor="orange"
+        emptyColor="gray"
+        className="flex"
+      />
     );
+  };
+
+  const getReviewButtonMessage = () => {
+    if (!isLoggedIn) return 'Log in to Write a Review';
+
+    switch (purchaseStatus) {
+      case 'not_purchased':
+        return 'Purchase This Product to Review';
+      case 'not_delivered':
+        return 'Can Review After Delivery';
+      case 'already_reviewed':
+        return "You've Already Reviewed This Product";
+      case 'can_review':
+        return 'Write a Review';
+      default:
+        return 'Write a Review';
+    }
   };
 
   return (
@@ -237,6 +323,17 @@ const ReviewsContent = ({ productId }: ReviewsContentProps) => {
           <span className="text-sm sm:text-base text-black/60">
             ({totalReviews})
           </span>
+          {averageRating > 0 && (
+            <Rating
+              initialValue={averageRating}
+              allowFraction
+              SVGclassName="inline-block"
+              size={20}
+              fillColor="orange"
+              emptyColor="gray"
+              className="flex"
+            />
+          )}
         </div>
         <div className="flex items-center space-x-2.5">
           <Select value={sortBy} onValueChange={handleSortChange}>
@@ -254,8 +351,9 @@ const ReviewsContent = ({ productId }: ReviewsContentProps) => {
             <DialogTrigger asChild>
               <Button
                 type="button"
-                className="sm:min-w-[166px] px-4 py-3 sm:px-5 sm:py-4 rounded-full bg-black font-medium text-xs sm:text-base h-12">
-                Write a Review
+                disabled={!userCanReview}
+                title={!userCanReview ? getReviewButtonMessage() : ''}>
+                {getReviewButtonMessage()}
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px]">
@@ -304,9 +402,25 @@ const ReviewsContent = ({ productId }: ReviewsContentProps) => {
         </div>
       </div>
 
+      {!isLoggedIn && (
+        <Alert className="mb-6">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Want to leave a review?</AlertTitle>
+          <AlertDescription>
+            Please log in and purchase this product to share your experience.
+          </AlertDescription>
+        </Alert>
+      )}
+
       {loading && page === 1 ? (
         <div className="flex justify-center items-center min-h-[200px]">
           <Loader2 className="h-8 w-8 animate-spin" />
+        </div>
+      ) : reviews.length === 0 ? (
+        <div className="text-center py-12 border border-dashed border-gray-200 rounded-lg">
+          <p className="text-gray-500">
+            No reviews yet. Be the first to share your experience!
+          </p>
         </div>
       ) : (
         <>

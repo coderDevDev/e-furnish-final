@@ -23,7 +23,7 @@ const ProductCard = ({ data }: ProductCardProps) => {
     <Link
       href={`/shop/product/${data.id}`}
       className="flex flex-col items-start aspect-auto">
-      <div className="bg-[#F0EEED] rounded-[13px] lg:rounded-[20px] w-full lg:max-w-[295px] aspect-square mb-2.5 xl:mb-4 overflow-hidden">
+      <div className="">
         <Image
           src={data.srcurl}
           // src={data.srcUrl}

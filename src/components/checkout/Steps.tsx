@@ -8,7 +8,7 @@ export function Steps({ currentStep }: StepsProps) {
   const steps = [
     { number: 1, title: 'Shipping' },
     { number: 2, title: 'Payment' },
-    { number: 3, title: 'Review' }
+    { number: 3, title: 'Done' }
   ];
 
   return (

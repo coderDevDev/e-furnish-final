@@ -171,17 +171,25 @@ export const authService = {
     if (error) throw error;
   },
 
-  async createOrder(orderData: any) {
-    const supabase = createClientComponentClient();
-
+  async createOrder(orderData: OrderData) {
     try {
       const { data, error } = await supabase
         .from('orders')
         .insert([orderData])
-        .select('*')
+        .select()
         .single();
 
       if (error) throw error;
+
+      // After successful order creation, send confirmation email
+      if (data) {
+        try {
+          await this.sendOrderConfirmationEmail(data.id);
+        } catch (emailError) {
+          console.error('Failed to send confirmation email:', emailError);
+          // Don't fail the order creation if email sending fails
+        }
+      }
 
       return { data, error: null };
     } catch (error) {
@@ -303,5 +311,86 @@ export const authService = {
       ...order,
       items: itemsWithProducts
     };
+  },
+
+  cancelOrder: async (orderId: string) => {
+    try {
+      // Update the order status to 'cancelled' in the database
+      const { data, error } = await supabase
+        .from('orders')
+        .update({ status: 'cancelled', payment_status: 'cancelled' })
+        .eq('id', orderId)
+        .select('*')
+        .single();
+
+      if (error) throw error;
+
+      return data;
+    } catch (error) {
+      console.error('Error cancelling order:', error);
+      throw error;
+    }
+  },
+
+  async sendOrderConfirmationEmail(orderId: string): Promise<void> {
+    try {
+      // Get order details first
+      const orderDetails = await this.getOrderDetails(orderId);
+      if (!orderDetails) throw new Error('Order not found');
+
+      // Get user details
+      const {
+        data: { user },
+        error: userError
+      } = await supabase.auth.getUser();
+      if (userError) throw userError;
+      if (!user) throw new Error('No user found');
+
+      // Get user profile for name
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+
+      // Format order items for email
+      const orderSummary = orderDetails.items.map(item => ({
+        name: item.product.name,
+        quantity: item.quantity,
+        price: item.price,
+        image: item.product.srcurl || item.product.gallery?.[0],
+        customization: item.customization
+      }));
+
+      // Calculate estimated delivery date (e.g., 7 business days from now)
+      const estimatedDeliveryDate = addBusinessDays(
+        new Date(),
+        3
+      ).toISOString();
+
+      // Call the API route to send the email
+      const response = await fetch('/api/send-order-confirmation', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          order: orderDetails,
+          userProfile: {
+            ...profile,
+            email: user.email
+          },
+          orderSummary,
+          shippingAddress: orderDetails.shipping_address,
+          estimatedDeliveryDate
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to send email');
+      }
+    } catch (error) {
+      console.error('Error sending order confirmation email:', error);
+      throw error;
+    }
   }
 };
