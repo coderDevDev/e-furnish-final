@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import {
   customerOrderService,
   OrderSummary
@@ -47,6 +47,8 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
+import OrderInvoice from '@/components/orders/OrderInvoice';
+import { supabase } from '@/lib/supabase/config';
 
 const ORDER_STATUSES = [
   'pending',
@@ -70,16 +72,61 @@ export default function OrderDetailsPage({
   const [cancelReason, setCancelReason] = useState('');
   const [newStatus, setNewStatus] = useState('');
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [showInvoice, setShowInvoice] = useState(false);
+  const invoiceRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     loadOrderDetails();
   }, []);
 
+  const [isLoaded, setIsLoaded] = useState(false);
   const loadOrderDetails = async () => {
     try {
       const data = await customerOrderService.getOrderDetails(id);
+
+      // If we have items but empty order_items, let's populate the order_items with product details
+      if (
+        Array.isArray(data.items) &&
+        data.items.length > 0 &&
+        (!data.order_items || data.order_items.length === 0)
+      ) {
+        // Create a new array to hold the enhanced items
+        const enhancedItems = [];
+
+        // Fetch product details for each item
+        for (const item of data.items) {
+          try {
+            // Fetch product details from your service or directly from Supabase
+            const { data: productData } = await supabase
+              .from('products')
+              .select('*')
+              .eq('id', item.product_id)
+              .single();
+
+            if (productData) {
+              enhancedItems.push({
+                ...item,
+                products: productData // Add the product details
+              });
+            } else {
+              // If product not found, still add the item with basic info
+              enhancedItems.push({
+                ...item,
+                products: { title: `Product #${item.product_id}` }
+              });
+            }
+          } catch (error) {
+            console.error(`Error fetching product ${item.product_id}:`, error);
+          }
+        }
+
+        // Update the data with the enhanced items
+        data.order_items = enhancedItems;
+      }
+
       setOrder(data);
       setNewStatus(data.status);
+      setIsLoaded(true);
     } catch (error) {
       console.error('Error loading order details:', error);
       toast.error('Failed to load order details');
@@ -124,6 +171,40 @@ export default function OrderDetailsPage({
     }
   };
 
+  const printInvoice = () => {
+    setShowInvoice(true);
+
+    // Use setTimeout to ensure the modal is rendered before printing
+    setTimeout(() => {
+      if (invoiceRef.current) {
+        // Option 1: Direct window printing (opens print dialog)
+        const printWindow = window.open('', '_blank');
+        if (printWindow) {
+          printWindow.document.write(`
+            <html>
+              <head>
+                <title>Order Invoice #${order?.id}</title>
+                <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+                <style>
+                  @media print {
+                    body { padding: 20px; }
+                  }
+                </style>
+              </head>
+              <body>
+                ${invoiceRef.current.outerHTML}
+                <script>
+                  window.onload = function() { window.print(); }
+                </script>
+              </body>
+            </html>
+          `);
+          printWindow.document.close();
+        }
+      }
+    }, 300);
+  };
+
   if (loading) {
     return (
       <div className="flex h-[400px] items-center justify-center">
@@ -166,198 +247,248 @@ export default function OrderDetailsPage({
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Order #{order.id}</h1>
-        <div className="flex items-center gap-4">
-          <Button variant="outline" size="sm">
-            <Printer className="mr-2 h-4 w-4" />
-            Print Invoice
-          </Button>
-          {/* <Button variant="outline" size="sm">
+    isLoaded && (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-bold">Order #{order.id}</h1>
+          <div className="flex items-center gap-4">
+            <Button
+              variant="outline"
+              onClick={printInvoice}
+              className="flex items-center gap-2">
+              <Printer className="h-4 w-4" />
+              Print Invoice
+            </Button>
+            {/* <Button variant="outline" size="sm">
             <Mail className="mr-2 h-4 w-4" />
             Send Update
           </Button> */}
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button variant="destructive" size="sm">
-                <Ban className="mr-2 h-4 w-4" />
-                Cancel Order
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Cancel Order</DialogTitle>
-                <DialogDescription>
-                  Please provide a reason for cancelling this order.
-                </DialogDescription>
-              </DialogHeader>
-              <Textarea
-                value={cancelReason}
-                onChange={e => setCancelReason(e.target.value)}
-                placeholder="Enter cancellation reason..."
-              />
-              <DialogFooter>
-                <Button
-                  variant="destructive"
-                  onClick={handleCancelOrder}
-                  disabled={updating || !cancelReason}>
-                  {updating && (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  )}
-                  Confirm Cancellation
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button variant="destructive" size="sm">
+                  <Ban className="mr-2 h-4 w-4" />
+                  Cancel Order
                 </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-        </div>
-      </div>
-
-      <div className="grid gap-6 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Order Summary</CardTitle>
-            <CardDescription>
-              Order details and customer information
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-sm text-muted-foreground">Order ID</p>
-                <p className="font-medium">{order.id}</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Order Date</p>
-                <p className="font-medium">
-                  {format(new Date(order.created_at), 'PPP')}
-                </p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Customer Name</p>
-                <p className="font-medium">{order.profiles.full_name}</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Payment Method</p>
-                <p className="font-medium capitalize">{order.payment_method}</p>
-              </div>
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Shipping Address</p>
-              <p className="font-medium whitespace-pre-wrap">
-                {formatCompleteAddress()}
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Order Status</CardTitle>
-            <CardDescription>Current status and timeline</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center gap-4">
-              <Select
-                value={newStatus}
-                onValueChange={handleStatusChange}
-                disabled={updating}>
-                <SelectTrigger className="w-[200px]">
-                  <SelectValue placeholder="Select status" />
-                </SelectTrigger>
-                <SelectContent>
-                  {ORDER_STATUSES.map(status => (
-                    <SelectItem key={status} value={status}>
-                      {status.charAt(0).toUpperCase() + status.slice(1)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {updating && <Loader2 className="h-4 w-4 animate-spin" />}
-            </div>
-            <OrderTimeline status={order.status} />
-          </CardContent>
-        </Card>
-
-        <Card className="md:col-span-2">
-          <CardHeader>
-            <CardTitle>Order Items</CardTitle>
-            <CardDescription>Products and customizations</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {order.order_items.map((item, index) => (
-                <div
-                  key={index}
-                  className="flex items-start justify-between border-b py-4 last:border-0">
-                  <div>
-                    <p className="font-medium">{item.product.title}</p>
-                    <p className="text-sm text-muted-foreground">
-                      Quantity: {item.quantity}
-                    </p>
-                    {item.customization && (
-                      <div className="mt-2 text-sm text-muted-foreground">
-                        <p>Customizations:</p>
-                        <ul className="list-inside list-disc">
-                          {Object.entries(item.customization).map(
-                            ([key, value]) => (
-                              <li key={key}>
-                                {key}: {JSON.stringify(value)}
-                              </li>
-                            )
-                          )}
-                        </ul>
-                      </div>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Cancel Order</DialogTitle>
+                  <DialogDescription>
+                    Please provide a reason for cancelling this order.
+                  </DialogDescription>
+                </DialogHeader>
+                <Textarea
+                  value={cancelReason}
+                  onChange={e => setCancelReason(e.target.value)}
+                  placeholder="Enter cancellation reason..."
+                />
+                <DialogFooter>
+                  <Button
+                    variant="destructive"
+                    onClick={handleCancelOrder}
+                    disabled={updating || !cancelReason}>
+                    {updating && (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     )}
-                  </div>
+                    Confirm Cancellation
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </div>
+        </div>
+
+        <div className="grid gap-6 md:grid-cols-2">
+          <Card>
+            <CardHeader>
+              <CardTitle>Order Summary</CardTitle>
+              <CardDescription>
+                Order details and customer information
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-muted-foreground">Order ID</p>
+                  <p className="font-medium">{order.id}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Order Date</p>
                   <p className="font-medium">
-                    ₱{(item.product.price * item.quantity).toLocaleString()}
+                    {format(new Date(order.created_at), 'PPP')}
                   </p>
                 </div>
-              ))}
-              <div className="flex justify-between border-t pt-4">
-                <p className="font-medium">Total Amount</p>
-                <p className="font-medium">
-                  ₱{order.total_amount.toLocaleString()}
+                <div>
+                  <p className="text-sm text-muted-foreground">Customer Name</p>
+                  <p className="font-medium">{order.profiles.full_name}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">
+                    Payment Method
+                  </p>
+                  <p className="font-medium capitalize">
+                    {order.payment_method}
+                  </p>
+                </div>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">
+                  Shipping Address
+                </p>
+                <p className="font-medium whitespace-pre-wrap">
+                  {formatCompleteAddress()}
                 </p>
               </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+            </CardContent>
+          </Card>
 
-      <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Confirm Status Update</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to update this order status to{' '}
-              <span className="font-semibold">
-                {newStatus.charAt(0).toUpperCase() + newStatus.slice(1)}
-              </span>
-              ?
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setConfirmOpen(false)}
-              disabled={updating}>
-              Cancel
-            </Button>
-            <Button onClick={handleStatusChange} disabled={updating}>
-              {updating ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Updating...
-                </>
-              ) : (
-                'Confirm'
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
+          <Card>
+            <CardHeader>
+              <CardTitle>Order Status</CardTitle>
+              <CardDescription>Current status and timeline</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center gap-4">
+                <Select
+                  value={newStatus}
+                  onValueChange={handleStatusChange}
+                  disabled={updating}>
+                  <SelectTrigger className="w-[200px]">
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {ORDER_STATUSES.map(status => (
+                      <SelectItem key={status} value={status}>
+                        {status.charAt(0).toUpperCase() + status.slice(1)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {updating && <Loader2 className="h-4 w-4 animate-spin" />}
+              </div>
+              <OrderTimeline status={order.status} />
+            </CardContent>
+          </Card>
+
+          <Card className="md:col-span-2">
+            <CardHeader>
+              <CardTitle>Order Items</CardTitle>
+              <CardDescription>Products and customizations</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {console.log({ dy: order.order_items })}
+                {order.order_items.map((item, index) => (
+                  <div
+                    key={index}
+                    className="flex items-start justify-between border-b py-4 last:border-0">
+                    <div>
+                      <p className="font-medium">{item.products.title}</p>
+                      <p className="text-sm text-muted-foreground">
+                        Quantity: {item.quantity}
+                      </p>
+                      {item.customization && (
+                        <div className="mt-2 text-sm text-muted-foreground">
+                          <p>Customizations:</p>
+                          <ul className="list-inside list-disc">
+                            {Object.entries(item.customization).map(
+                              ([key, value]) => (
+                                <li key={key}>
+                                  {key}: {JSON.stringify(value)}
+                                </li>
+                              )
+                            )}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                    <p className="font-medium">
+                      ₱{(item.products.price * item.quantity).toLocaleString()}
+                    </p>
+                  </div>
+                ))}
+                <div className="flex justify-between border-t pt-4">
+                  <p className="font-medium">Total Amount</p>
+                  <p className="font-medium">
+                    ₱{order.total_amount.toLocaleString()}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Confirm Status Update</DialogTitle>
+              <DialogDescription>
+                Are you sure you want to update this order status to{' '}
+                <span className="font-semibold">
+                  {newStatus.charAt(0).toUpperCase() + newStatus.slice(1)}
+                </span>
+                ?
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setConfirmOpen(false)}
+                disabled={updating}>
+                Cancel
+              </Button>
+              <Button onClick={handleStatusChange} disabled={updating}>
+                {updating ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Updating...
+                  </>
+                ) : (
+                  'Confirm'
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={showInvoice} onOpenChange={setShowInvoice}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0">
+            <OrderInvoice order={order} ref={invoiceRef} />
+            <DialogFooter className="p-4 bg-gray-50 border-t">
+              <Button variant="outline" onClick={() => setShowInvoice(false)}>
+                Close
+              </Button>
+              <Button
+                onClick={() => {
+                  if (invoiceRef.current) {
+                    const printWindow = window.open('', '_blank');
+                    if (printWindow) {
+                      printWindow.document.write(`
+                      <html>
+                        <head>
+                          <title>Order Invoice #${order?.id}</title>
+                          <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+                        </head>
+                        <body>
+                          ${invoiceRef.current.outerHTML}
+                          <script>
+                            window.onload = function() { window.print(); window.close(); }
+                          </script>
+                        </body>
+                      </html>
+                    `);
+                      printWindow.document.close();
+                    }
+                  }
+                }}
+                className="bg-primary hover:bg-primary/90">
+                <Printer className="h-4 w-4 mr-2" />
+                Print
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
+    )
   );
 }

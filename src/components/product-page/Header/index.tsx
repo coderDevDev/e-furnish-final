@@ -112,6 +112,7 @@ const Header = ({ data }: { data: Product }) => {
     fetchAverageRating();
   }, [data.id]);
 
+  console.log({ data });
   return (
     <>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">

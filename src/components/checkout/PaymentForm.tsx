@@ -37,6 +37,7 @@ import {
   DialogTitle
 } from '@/components/ui/dialog';
 import { CheckCircle2 } from 'lucide-react';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 
 const formSchema = z.object({
   paymentMethod: z.enum(['cod', 'paypal']),
@@ -57,6 +58,7 @@ export function PaymentForm({ onNext }: PaymentFormProps) {
   const shippingFee = useAppSelector(state => state.checkout.shippingFee);
   const router = useRouter();
   const dispatch = useAppDispatch();
+  const supabase = createClientComponentClient();
 
   const hasItems = items && items.length > 0;
   const calculateTotals = () => {
@@ -94,6 +96,47 @@ export function PaymentForm({ onNext }: PaymentFormProps) {
 
   const selectedMethod = form.watch('paymentMethod');
 
+  // New function to update product stock and sales count
+  const updateProductInventory = async orderItems => {
+    try {
+      // For each product in the order, we need to update the stock and sales_count
+      for (const item of orderItems) {
+        // Get current product data
+        const { data: productData, error: productError } = await supabase
+          .from('products')
+          .select('stock, sales_count')
+          .eq('id', item.product_id)
+          .single();
+
+        if (productError) {
+          console.error('Error fetching product data:', productError);
+          continue; // Skip to next item if there's an error
+        }
+
+        // Calculate new stock and sales_count
+        const newStock = Math.max(0, (productData.stock || 0) - item.quantity);
+        const newSalesCount =
+          (parseInt(productData.sales_count) || 0) + parseInt(item.quantity);
+
+        // Update the product
+        const { error: updateError } = await supabase
+          .from('products')
+          .update({
+            stock: newStock,
+            sales_count: newSalesCount,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', item.product_id);
+
+        if (updateError) {
+          console.error('Error updating product inventory:', updateError);
+        }
+      }
+    } catch (error) {
+      console.error('Error in updateProductInventory:', error);
+    }
+  };
+
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     if (!hasItems) return;
 
@@ -123,14 +166,26 @@ export function PaymentForm({ onNext }: PaymentFormProps) {
           : undefined
       });
 
-      // if (error) throw error;
-      // if (!order) throw new Error('Failed to create order');
+      if (error) throw error;
+      if (!order) throw new Error('Failed to create order');
+
+      // Update product inventory after successful order creation
+      await updateProductInventory(orderItems);
+
+      // Optional: Send email confirmation
+      try {
+        await authService.sendOrderConfirmationEmail(order.id);
+      } catch (emailError) {
+        console.error('Error sending order confirmation email:', emailError);
+        // Don't throw here, as the order was still created successfully
+      }
 
       setPlacedOrderId(order.id);
       setSuccessDialogOpen(true);
       toast.success(
         'Order placed successfully! Check your email for confirmation.'
       );
+
       dispatch(clearCart());
     } catch (error) {
       console.error('Order error:', error);
@@ -206,12 +261,12 @@ export function PaymentForm({ onNext }: PaymentFormProps) {
 
           {selectedMethod === 'cod' ? (
             <>
-              <Alert className="bg-blue-50 text-blue-800 border-blue-200">
+              {/* <Alert className="bg-blue-50 text-blue-800 border-blue-200">
                 <AlertDescription>
                   Please prepare the exact amount of ₱{total.toLocaleString()}{' '}
                   upon delivery.
                 </AlertDescription>
-              </Alert>
+              </Alert> */}
 
               {/* <FormField
                 control={form.control}

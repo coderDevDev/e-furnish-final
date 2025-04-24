@@ -100,6 +100,7 @@ class CustomerOrderService {
         status,
         shipping_address,
         shipping_fee,
+        items,
         profiles!orders_user_id_fkey(
           id, 
           full_name, 
@@ -149,15 +150,50 @@ class CustomerOrderService {
         throw error;
       }
 
-      // Debug output
-      console.log('First order:', data?.[0]?.id);
-      console.log('Order items:', data?.[0]?.order_items?.length);
-      console.log(
-        'First order item product:',
-        data?.[0]?.order_items?.[0]?.products
+      // Process the data to enhance items with product details
+      const enhancedData = await Promise.all(
+        (data || []).map(async order => {
+          // If order_items is empty but items exists, fetch product details for items
+          if (
+            (!order.order_items || order.order_items.length === 0) &&
+            order.items &&
+            order.items.length > 0
+          ) {
+            // Create a lookup array of product IDs to fetch
+            const productIds = order.items.map(item => item.product_id);
+
+            // Fetch products in a single query
+            const { data: products } = await supabase
+              .from('products')
+              .select('id, title, price, srcurl')
+              .in('id', productIds);
+
+            // Create a product lookup map
+            const productMap = (products || []).reduce((map, product) => {
+              map[product.id] = product;
+              return map;
+            }, {});
+
+            // Enhance items with product details
+            const enhancedItems = order.items.map(item => ({
+              ...item,
+              product: productMap[item.product_id] || {
+                title: `Product #${item.product_id}`,
+                price: item.price
+              }
+            }));
+
+            return {
+              ...order,
+              enhanced_items: enhancedItems
+            };
+          }
+
+          return order;
+        })
       );
 
-      return data || [];
+      return enhancedData || [];
     } catch (error) {
       console.error('Error in getOrders:', error);
       throw error;

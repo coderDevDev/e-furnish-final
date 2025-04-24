@@ -441,7 +441,7 @@ const ShippingSettings = () => {
         ) : (
           <>
             {/* Map visualization */}
-            <div>
+            {/* <div>
               <h3 className="text-lg font-medium mb-2">Shipping Zones Map</h3>
               <p className="text-sm text-muted-foreground mb-4">
                 Green areas qualify for free shipping. Click on municipalities
@@ -451,7 +451,7 @@ const ShippingSettings = () => {
                 ref={mapContainerRef}
                 className="w-full h-96 rounded-md border border-input overflow-hidden"
               />
-            </div>
+            </div> */}
 
             <Separator />
 

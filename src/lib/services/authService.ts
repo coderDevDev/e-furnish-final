@@ -315,6 +315,51 @@ export const authService = {
 
   cancelOrder: async (orderId: string) => {
     try {
+      // First, get the order with its items to know which products to update
+      const { data: order, error: orderError } = await supabase
+        .from('orders')
+        .select('*, order_items(*)')
+        .eq('id', orderId)
+        .single();
+
+      if (orderError) throw orderError;
+
+      // Update stock for each product in the order
+      for (const item of order.order_items) {
+        // Get current product data
+        const { data: productData, error: productError } = await supabase
+          .from('products')
+          .select('stock, sales_count')
+          .eq('id', item.product_id)
+          .single();
+
+        if (productError) {
+          console.error('Error fetching product data:', productError);
+          continue; // Skip to next item if there's an error
+        }
+
+        // Calculate restored stock and decreased sales count
+        const restoredStock = (productData.stock || 0) + item.quantity;
+        const updatedSalesCount = Math.max(
+          0,
+          (parseInt(productData.sales_count) || 0) - parseInt(item.quantity)
+        );
+
+        // Update the product inventory
+        const { error: updateError } = await supabase
+          .from('products')
+          .update({
+            stock: restoredStock,
+            sales_count: updatedSalesCount,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', item.product_id);
+
+        if (updateError) {
+          console.error('Error restoring product inventory:', updateError);
+        }
+      }
+
       // Update the order status to 'cancelled' in the database
       const { data, error } = await supabase
         .from('orders')

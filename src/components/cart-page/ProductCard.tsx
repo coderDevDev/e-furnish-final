@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import {
   removeCartItem,
@@ -26,6 +26,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger
 } from '@/components/ui/alert-dialog';
+import { supabase } from '@/lib/supabase/config';
 
 interface ProductCardProps {
   data: {
@@ -35,6 +36,7 @@ interface ProductCardProps {
       price: number;
       images: string[];
       stock: number;
+      srcurl?: string;
       customization?: ProductCustomization;
     };
     quantity: number;
@@ -92,11 +94,29 @@ const CustomizationDetails = ({ customization }: { customization: any }) => {
 
 const ProductCard = ({ data, index }: ProductCardProps) => {
   const dispatch = useAppDispatch();
-  const { product, quantity, selected } = data;
+  let { product, quantity, selected } = data;
   const [inputQuantity, setInputQuantity] = useState(quantity.toString());
 
+  console.log({ product });
+
+  const [productStock, setProductStock] = useState(product.stock);
+  // fetch product stock
+  const fetchProductStock = async () => {
+    const { data: productStock } = await supabase
+      .from('products')
+      .select('stock')
+      .eq('id', product.id);
+
+    console.log({ productStock });
+    setProductStock(productStock?.length > 0 ? productStock[0].stock : 0);
+  };
+
+  useEffect(() => {
+    fetchProductStock();
+  }, [product.id]);
+
   const handleQuantityChange = (change: number) => {
-    const newQuantity = Math.max(1, Math.min(product.stock, quantity + change));
+    const newQuantity = Math.max(1, Math.min(productStock, quantity + change));
     dispatch(updateQuantity({ index, quantity: newQuantity }));
     setInputQuantity(newQuantity.toString());
   };
@@ -151,7 +171,12 @@ const ProductCard = ({ data, index }: ProductCardProps) => {
 
       <div className="flex-1 flex items-center gap-4">
         <Image
-          src={product.srcurl}
+          src={
+            product.srcurl ||
+            (product.images && product.images.length > 0
+              ? product.images[0]
+              : '/placeholder.jpg')
+          }
           alt={product.name}
           width={80}
           height={80}
@@ -163,7 +188,7 @@ const ProductCard = ({ data, index }: ProductCardProps) => {
           {product.customization && (
             <CustomizationDetails customization={product.customization} />
           )}
-          <p className="text-sm text-gray-500">Stock: {product.stock}</p>
+          <p className="text-sm text-gray-500">Stock: {productStock}</p>
         </div>
 
         <div className="flex items-center gap-2">

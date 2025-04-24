@@ -180,9 +180,9 @@ export default function ProfilePage() {
     <div className="container max-w-4xl mx-auto px-4 py-8 sm:py-10">
       <Tabs defaultValue="profile" className="space-y-6">
         <div className="flex justify-center mb-4">
-          <TabsList className="grid w-full max-w-md grid-cols-2">
+          <TabsList className="grid w-full max-w-md grid-cols-1">
             <TabsTrigger value="profile">Profile</TabsTrigger>
-            <TabsTrigger value="orders">Orders</TabsTrigger>
+            {/* <TabsTrigger value="orders">Orders</TabsTrigger> */}
             {/* <TabsTrigger value="addresses">Addresses</TabsTrigger>
             <TabsTrigger value="payments">Payments</TabsTrigger> */}
           </TabsList>

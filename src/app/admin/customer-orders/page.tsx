@@ -44,7 +44,8 @@ import {
   Filter,
   Loader2,
   Search,
-  X
+  X,
+  ShoppingBag
 } from 'lucide-react';
 import {
   Popover,
@@ -54,6 +55,7 @@ import {
 import { Calendar } from '@/components/ui/calendar';
 import { format, subDays, isAfter, isBefore, parseISO } from 'date-fns';
 import { toast } from 'sonner';
+import { supabase } from '@/lib/supabase/config';
 
 export default function CustomerOrdersPage() {
   const router = useRouter();
@@ -99,8 +101,59 @@ export default function CustomerOrdersPage() {
         setIsLoading(true);
 
         // Fetch order stats
-        const orderStats = await customerOrderService.getOrderStats();
-        setStats(orderStats);
+        const fetchOrderStats = async () => {
+          try {
+            const { data: orders, error } = await supabase
+              .from('orders')
+              .select('*')
+              .order('created_at', { ascending: false });
+
+            if (error) throw error;
+
+            // Count orders by status
+            let totalOrders = orders.length;
+            let pendingOrders = 0;
+            let processingOrders = 0;
+            let shippedOrders = 0; // Make sure this is initialized
+            let completedOrders = 0;
+            let cancelledOrders = 0;
+            let totalRevenue = 0;
+
+            orders.forEach(order => {
+              if (order.status === 'pending') {
+                pendingOrders++;
+              } else if (order.status === 'processing') {
+                processingOrders++;
+              } else if (order.status === 'shipped') {
+                shippedOrders++; // Count shipped orders properly
+              } else if (
+                order.status === 'delivered' ||
+                order.status === 'completed'
+              ) {
+                completedOrders++;
+                // Only count completed orders in revenue
+                totalRevenue += order.total_amount;
+              } else if (order.status === 'cancelled') {
+                cancelledOrders++;
+              }
+            });
+
+            // Make sure to include shipped in the stats object
+            setStats({
+              total: totalOrders,
+              pending: pendingOrders,
+              processing: processingOrders,
+              shipped: shippedOrders, // Include this in the stats object
+              completed: completedOrders,
+              cancelled: cancelledOrders,
+              totalRevenue
+            });
+          } catch (error) {
+            console.error('Error fetching order stats:', error);
+          }
+        };
+
+        await fetchOrderStats();
 
         // Fetch all orders - use the correct method name
         const allOrders = await customerOrderService.getOrders();
@@ -214,6 +267,8 @@ export default function CustomerOrdersPage() {
     setCurrentPage(1); // Reset to first page on new search
   };
 
+  console.log({ filteredOrders });
+
   return (
     <div className="flex-1 space-y-6">
       <div className="flex items-center justify-between">
@@ -228,19 +283,24 @@ export default function CustomerOrdersPage() {
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="all-orders">All Orders</TabsTrigger>
           <TabsTrigger value="pending">
-            Pending ({stats?.pending || 0})
+            Pending (
+            {orders.filter(order => order.status === 'pending').length || 0})
           </TabsTrigger>
           <TabsTrigger value="processing">
-            Processing ({stats?.processing || 0})
+            Processing (
+            {orders.filter(order => order.status === 'processing').length || 0})
           </TabsTrigger>
           <TabsTrigger value="shipped">
-            Shipped ({stats?.shipped || 0})
+            Shipped (
+            {orders.filter(order => order.status === 'shipped').length || 0})
           </TabsTrigger>
           <TabsTrigger value="delivered">
-            Delivered ({stats?.completed || 0})
+            Delivered (
+            {orders.filter(order => order.status === 'delivered').length || 0})
           </TabsTrigger>
           <TabsTrigger value="cancelled">
-            Cancelled ({stats?.cancelled || 0})
+            Cancelled (
+            {orders.filter(order => order.status === 'cancelled').length || 0})
           </TabsTrigger>
           <TabsTrigger value="reports">Reports</TabsTrigger>
         </TabsList>
@@ -476,6 +536,7 @@ export default function CustomerOrdersPage() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
+                        {console.log({ filteredOrders })}
                         {filteredOrders.map(order => (
                           <TableRow key={order.id}>
                             <TableCell className="font-medium">
@@ -509,6 +570,53 @@ export default function CustomerOrdersPage() {
                                       <span className="text-xs text-muted-foreground">
                                         +{order.order_items.length - 1} more
                                         items
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                              ) : order.enhanced_items &&
+                                order.enhanced_items.length > 0 ? (
+                                <div className="flex items-center gap-2">
+                                  {order.enhanced_items[0].product.srcurl ? (
+                                    <img
+                                      src={
+                                        order.enhanced_items[0].product.srcurl
+                                      }
+                                      alt={
+                                        order.enhanced_items[0].product.title
+                                      }
+                                      className="h-10 w-10 rounded-md object-cover border"
+                                    />
+                                  ) : (
+                                    <div className="h-10 w-10 bg-muted rounded-md flex items-center justify-center text-muted-foreground">
+                                      <ShoppingBag className="h-5 w-5" />
+                                    </div>
+                                  )}
+                                  <div className="flex flex-col">
+                                    <span className="font-medium truncate max-w-[150px]">
+                                      {order.enhanced_items[0].product.title}
+                                    </span>
+                                    {order.enhanced_items.length > 1 && (
+                                      <span className="text-xs text-muted-foreground">
+                                        +{order.enhanced_items.length - 1} more
+                                        items
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                              ) : order.items && order.items.length > 0 ? (
+                                <div className="flex items-center gap-2">
+                                  <div className="h-10 w-10 bg-muted rounded-md flex items-center justify-center text-muted-foreground">
+                                    <ShoppingBag className="h-5 w-5" />
+                                  </div>
+                                  <div className="flex flex-col">
+                                    <span className="font-medium truncate max-w-[150px]">
+                                      Product #{order.items[0].product_id} (₱
+                                      {order.items[0].price})
+                                    </span>
+                                    {order.items.length > 1 && (
+                                      <span className="text-xs text-muted-foreground">
+                                        +{order.items.length - 1} more items
                                       </span>
                                     )}
                                   </div>
@@ -721,6 +829,47 @@ function OrderStatusTable({ orders }: { orders: OrderSummary[] }) {
                     {order.order_items.length > 1 && (
                       <span className="text-xs text-muted-foreground">
                         +{order.order_items.length - 1} more items
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ) : order.enhanced_items && order.enhanced_items.length > 0 ? (
+                <div className="flex items-center gap-2">
+                  {order.enhanced_items[0].product.srcurl ? (
+                    <img
+                      src={order.enhanced_items[0].product.srcurl}
+                      alt={order.enhanced_items[0].product.title}
+                      className="h-10 w-10 rounded-md object-cover border"
+                    />
+                  ) : (
+                    <div className="h-10 w-10 bg-muted rounded-md flex items-center justify-center text-muted-foreground">
+                      <ShoppingBag className="h-5 w-5" />
+                    </div>
+                  )}
+                  <div className="flex flex-col">
+                    <span className="font-medium truncate max-w-[150px]">
+                      {order.enhanced_items[0].product.title}
+                    </span>
+                    {order.enhanced_items.length > 1 && (
+                      <span className="text-xs text-muted-foreground">
+                        +{order.enhanced_items.length - 1} more items
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ) : order.items && order.items.length > 0 ? (
+                <div className="flex items-center gap-2">
+                  <div className="h-10 w-10 bg-muted rounded-md flex items-center justify-center text-muted-foreground">
+                    <ShoppingBag className="h-5 w-5" />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="font-medium truncate max-w-[150px]">
+                      Product #{order.items[0].product_id} (₱
+                      {order.items[0].price})
+                    </span>
+                    {order.items.length > 1 && (
+                      <span className="text-xs text-muted-foreground">
+                        +{order.items.length - 1} more items
                       </span>
                     )}
                   </div>

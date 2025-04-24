@@ -47,7 +47,7 @@ const adminLinks = [
     icon: RiSettings4Line
   },
   {
-    label: 'Supplier Settings',
+    label: 'Supplier Management',
     href: '/admin/supplier-settings',
     icon: MdInventory2
   }
