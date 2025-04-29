@@ -83,9 +83,10 @@ type Order = {
   updated_at: string;
 };
 
-type OrderHistoryProps = {
-  supplierId?: string;
-};
+interface OrderHistoryProps {
+  supplierId: string;
+  role: 'admin' | 'supplier';
+}
 
 OrderHistory.defaultProps = {
   supplierId: '' // Empty string as fallback (will show no results)
@@ -130,7 +131,10 @@ const STATUS_REASONS: StatusUpdateReason = {
   ]
 };
 
-export default function OrderHistory({ supplierId = '' }: OrderHistoryProps) {
+export default function OrderHistory({
+  supplierId = '',
+  role = 'supplier'
+}: OrderHistoryProps) {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -463,7 +467,7 @@ export default function OrderHistory({ supplierId = '' }: OrderHistoryProps) {
                 // setSelectedOrder(null);
               }
             }}>
-            <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+            <DialogContent className="max-w-3xl">
               <DialogHeader>
                 <DialogTitle>Order Details</DialogTitle>
                 <DialogDescription>
@@ -587,130 +591,161 @@ export default function OrderHistory({ supplierId = '' }: OrderHistoryProps) {
                   </div>
                 </div>
 
-                <div className="mt-6">
-                  <Card className="border">
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-sm font-medium">
-                        Update Order Status
-                      </CardTitle>
-                      <CardDescription>
-                        Change the current order status
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      {/* Status Timeline */}
-                      <OrderTimeline status={selectedOrder.status} />
+                {role === 'supplier' ? (
+                  <div className="mt-6">
+                    <Card className="border">
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-sm font-medium">
+                          Update Order Status
+                        </CardTitle>
+                        <CardDescription>
+                          Change the current order status
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        {/* Status Timeline */}
+                        <OrderTimeline status={selectedOrder.status} />
 
-                      {/* Status Update Form */}
-                      <div className="grid gap-4 pt-4 border-t">
-                        <div className="grid gap-2">
-                          <Label className="font-medium">
-                            Select new status
-                          </Label>
-                          <Select
-                            value={selectedStatus}
-                            onValueChange={setSelectedStatus}
-                            disabled={
-                              updatingStatus ||
-                              selectedOrder?.status === 'delivered' ||
-                              selectedOrder?.status === 'cancelled'
-                            }>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Choose status" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="processing">
-                                Processing
-                              </SelectItem>
-                              <SelectItem value="shipped">Shipped</SelectItem>
-                              <SelectItem value="delivered">
-                                Delivered
-                              </SelectItem>
-                              <SelectItem value="cancelled">
-                                Cancelled
-                              </SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-
-                        {selectedStatus && (
+                        {/* Status Update Form */}
+                        <div className="grid gap-4 pt-4 border-t">
                           <div className="grid gap-2">
                             <Label className="font-medium">
-                              Select reason for status change
+                              Select new status
                             </Label>
                             <Select
-                              value={statusReason}
-                              onValueChange={value => {
-                                setStatusReason(value);
-                                if (value !== 'Other (specify)') {
-                                  setCustomReason('');
-                                }
-                              }}
-                              disabled={updatingStatus}>
+                              value={selectedStatus}
+                              onValueChange={setSelectedStatus}
+                              disabled={
+                                updatingStatus ||
+                                selectedOrder?.status === 'delivered' ||
+                                selectedOrder?.status === 'cancelled'
+                              }>
                               <SelectTrigger>
-                                <SelectValue placeholder="Choose reason" />
+                                <SelectValue placeholder="Choose status" />
                               </SelectTrigger>
                               <SelectContent>
-                                {STATUS_REASONS[
-                                  selectedStatus as OrderStatus
-                                ]?.map(reason => (
-                                  <SelectItem key={reason} value={reason}>
-                                    {reason}
-                                  </SelectItem>
-                                ))}
+                                <SelectItem value="processing">
+                                  Processing
+                                </SelectItem>
+                                <SelectItem value="shipped">Shipped</SelectItem>
+                                <SelectItem value="delivered">
+                                  Delivered
+                                </SelectItem>
+                                <SelectItem value="cancelled">
+                                  Cancelled
+                                </SelectItem>
                               </SelectContent>
                             </Select>
+                          </div>
 
-                            {statusReason === 'Other (specify)' && (
-                              <div className="grid gap-2">
-                                <Label className="font-medium">
-                                  Specify reason
-                                </Label>
-                                <Input
-                                  placeholder="Enter custom reason"
-                                  value={customReason}
-                                  onChange={e =>
-                                    setCustomReason(e.target.value)
+                          {selectedStatus && (
+                            <div className="grid gap-2">
+                              <Label className="font-medium">
+                                Select reason for status change
+                              </Label>
+                              <Select
+                                value={statusReason}
+                                onValueChange={value => {
+                                  setStatusReason(value);
+                                  if (value !== 'Other (specify)') {
+                                    setCustomReason('');
                                   }
-                                  disabled={updatingStatus}
-                                />
-                              </div>
+                                }}
+                                disabled={updatingStatus}>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Choose reason" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {STATUS_REASONS[
+                                    selectedStatus as OrderStatus
+                                  ]?.map(reason => (
+                                    <SelectItem key={reason} value={reason}>
+                                      {reason}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+
+                              {statusReason === 'Other (specify)' && (
+                                <div className="grid gap-2">
+                                  <Label className="font-medium">
+                                    Specify reason
+                                  </Label>
+                                  <Input
+                                    placeholder="Enter custom reason"
+                                    value={customReason}
+                                    onChange={e =>
+                                      setCustomReason(e.target.value)
+                                    }
+                                    disabled={updatingStatus}
+                                  />
+                                </div>
+                              )}
+                            </div>
+                          )}
+
+                          <Button
+                            className="w-full mt-2"
+                            disabled={
+                              updatingStatus ||
+                              !selectedStatus ||
+                              !statusReason ||
+                              (statusReason === 'Other (specify)' &&
+                                !customReason) ||
+                              selectedOrder?.status === 'delivered' ||
+                              selectedOrder?.status === 'cancelled'
+                            }
+                            onClick={() => {
+                              if (selectedOrder) {
+                                updateOrderStatus(
+                                  selectedOrder.id,
+                                  selectedStatus
+                                );
+                              }
+                            }}>
+                            {updatingStatus ? (
+                              <>
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                Updating...
+                              </>
+                            ) : (
+                              'Update Status'
                             )}
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                ) : (
+                  <div className="mt-6">
+                    <Card className="border">
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-sm font-medium">
+                          Order Status
+                        </CardTitle>
+                        <CardDescription>
+                          Current status of this order
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        {/* Status Timeline */}
+                        <OrderTimeline status={selectedOrder.status} />
+
+                        {/* Show status reason if exists */}
+                        {selectedOrder.status_reason && (
+                          <div className="pt-4 border-t">
+                            <p className="text-sm text-muted-foreground">
+                              <span className="font-medium">
+                                Status Reason:{' '}
+                              </span>
+                              {selectedOrder.status_reason}
+                            </p>
                           </div>
                         )}
-
-                        <Button
-                          className="w-full mt-2"
-                          disabled={
-                            updatingStatus ||
-                            !selectedStatus ||
-                            !statusReason ||
-                            (statusReason === 'Other (specify)' &&
-                              !customReason) ||
-                            selectedOrder?.status === 'delivered' ||
-                            selectedOrder?.status === 'cancelled'
-                          }
-                          onClick={() => {
-                            if (selectedOrder) {
-                              updateOrderStatus(
-                                selectedOrder.id,
-                                selectedStatus
-                              );
-                            }
-                          }}>
-                          {updatingStatus ? (
-                            <>
-                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                              Updating...
-                            </>
-                          ) : (
-                            'Update Status'
-                          )}
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                )}
               </div>
 
               <DialogFooter>

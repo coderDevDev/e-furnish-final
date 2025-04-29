@@ -355,7 +355,13 @@ export default function MyOffersList() {
               {getStatusBadge(offer)}
             </div>
             <div className="text-sm text-muted-foreground">
-              <p>Price: ₱{offer.price.toFixed(2)}</p>
+              <p>
+                Price: ₱
+                {offer.price.toLocaleString('en-PH', {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2
+                })}
+              </p>
               <p>Min. Order: {offer.min_order_quantity}</p>
               <p className="text-xs">
                 Created: {format(new Date(offer.created_at), 'MMM d, yyyy')}
@@ -636,7 +642,13 @@ export default function MyOffersList() {
                             <TableCell className="font-medium">
                               {offer.title}
                             </TableCell>
-                            <TableCell>₱{offer.price.toFixed(2)}</TableCell>
+                            <TableCell>
+                              ₱
+                              {offer.price.toLocaleString('en-PH', {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2
+                              })}
+                            </TableCell>
                             <TableCell>{offer.category}</TableCell>
                             <TableCell>{offer.min_order_quantity}</TableCell>
                             <TableCell>{getStatusBadge(offer)}</TableCell>

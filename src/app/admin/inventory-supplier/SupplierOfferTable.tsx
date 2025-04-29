@@ -191,10 +191,18 @@ export default function SupplierOfferTable({
                   {offer.quantity} {offer.unit}
                 </TableCell>
                 <TableCell>
-                  {offer.currency} {offer.price_per_unit.toFixed(2)}
+                  {offer.currency}{' '}
+                  {offer.price_per_unit.toLocaleString('en-PH', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                  })}
                 </TableCell>
                 <TableCell>
-                  {offer.currency} {offer.total_price.toFixed(2)}
+                  {offer.currency}{' '}
+                  {offer.total_price.toLocaleString('en-PH', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                  })}
                 </TableCell>
                 <TableCell>{getStatusBadge(offer.status)}</TableCell>
                 <TableCell>

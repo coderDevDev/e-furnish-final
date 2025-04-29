@@ -79,6 +79,7 @@ const ReviewsContent = ({ productId }: ReviewsContentProps) => {
   const [userCanReview, setUserCanReview] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [purchaseStatus, setPurchaseStatus] = useState<string | null>(null);
+  const [canReview, setCanReview] = useState(false);
 
   const fetchReviews = async (reset = false) => {
     try {
@@ -177,63 +178,35 @@ const ReviewsContent = ({ productId }: ReviewsContentProps) => {
       const {
         data: { session }
       } = await supabase.auth.getSession();
-      setIsLoggedIn(!!session);
 
-      if (!session) return;
-
-      // Check if user has purchased and received this product
-      const { data: orders } = await supabase
-        .from('orders')
-        .select('items, status')
-        .eq('user_id', session.user.id);
-
-      if (!orders || orders.length === 0) {
-        setPurchaseStatus('not_purchased');
+      if (!session) {
+        setCanReview(false);
         return;
       }
 
-      // Check if product_id is in the items array
-      const purchasedItems = orders.some(order =>
-        order.items.some(item => item.product_id === parseInt(productId))
-      );
-
-      if (!purchasedItems) {
-        setPurchaseStatus('not_purchased');
-        return;
-      }
-
-      // Check if any order is delivered
-      const deliveredItems = orders.filter(order =>
-        order.items.some(
-          item =>
-            item.product_id === parseInt(productId) &&
-            order.status === 'delivered'
-        )
-      );
-
-      if (deliveredItems.length === 0) {
-        setPurchaseStatus('not_delivered');
-        return;
-      }
-
-      // Check if user already reviewed this product
-      const { data: existingReview } = await supabase
+      // Change from single row to array response
+      const { data: reviews, error } = await supabase
         .from('reviews')
         .select('*')
         .eq('product_id', productId)
-        .eq('user_id', session.user.id)
-        .single();
+        .eq('user_id', session.user.id);
 
-      if (existingReview) {
-        setPurchaseStatus('already_reviewed');
-        return;
+      if (error) throw error;
+
+      // Check if user has already reviewed
+      setCanReview(!reviews || reviews.length === 0);
+
+      // If user has reviewed, get their review
+      if (reviews && reviews.length > 0) {
+        const latestReview = reviews[0]; // Get most recent review
+        setNewReview({
+          rating: latestReview.rating,
+          comment: latestReview.comment || ''
+        });
       }
-
-      // User can review
-      setPurchaseStatus('can_review');
-      setUserCanReview(true);
     } catch (error) {
-      console.error('Error checking if user can review:', error);
+      console.error('Error checking review status:', error);
+      toast.error('Failed to check review status');
     }
   };
 

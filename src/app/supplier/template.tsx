@@ -130,21 +130,6 @@ export default function SupplierTemplate({
       href: '/supplier/shipping-settings',
       label: 'Shipping Settings',
       icon: <Truck className="h-4 w-4 mr-2" />
-    },
-    {
-      href: '/supplier/payment-options',
-      label: 'Payment Options',
-      icon: <CreditCard className="h-4 w-4 mr-2" />
-    },
-    {
-      href: '/supplier/analytics',
-      label: 'Analytics',
-      icon: <BarChart className="h-4 w-4 mr-2" />
-    },
-    {
-      href: '/supplier/settings',
-      label: 'Account Settings',
-      icon: <Settings className="h-4 w-4 mr-2" />
     }
   ];
   return (

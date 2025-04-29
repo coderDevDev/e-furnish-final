@@ -226,7 +226,11 @@ export default function OrderDetailsPage({ params }: OrderDetailsProps) {
                           </p>
                           <div className="mt-2">
                             <p className="text-lg font-semibold">
-                              ₱{item.product.price.toFixed(2)}
+                              ₱
+                              {item.product.price.toLocaleString('en-PH', {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2
+                              })}
                             </p>
                             {item.customization && (
                               <div className="mt-2 text-sm text-gray-600 bg-gray-50 p-3 rounded-md">
@@ -258,7 +262,14 @@ export default function OrderDetailsPage({ params }: OrderDetailsProps) {
                                           </span>
                                           {custom.cost > 0 && (
                                             <span className="text-gray-700">
-                                              +₱{custom.cost.toFixed(2)}
+                                              +₱
+                                              {custom.cost.toLocaleString(
+                                                'en-PH',
+                                                {
+                                                  minimumFractionDigits: 2,
+                                                  maximumFractionDigits: 2
+                                                }
+                                              )}
                                             </span>
                                           )}
                                         </div>
@@ -268,8 +279,12 @@ export default function OrderDetailsPage({ params }: OrderDetailsProps) {
                                       <span>Total Customization:</span>
                                       <span>
                                         ₱
-                                        {item.customization.totalCustomizationCost?.toFixed(
-                                          2
+                                        {item.customization.totalCustomizationCost?.toLocaleString(
+                                          'en-PH',
+                                          {
+                                            minimumFractionDigits: 2,
+                                            maximumFractionDigits: 2
+                                          }
                                         ) || '0.00'}
                                       </span>
                                     </div>
@@ -308,8 +323,12 @@ export default function OrderDetailsPage({ params }: OrderDetailsProps) {
                                         <span>Total Customization:</span>
                                         <span>
                                           ₱
-                                          {item.customization.totalCustomizationCost.toFixed(
-                                            2
+                                          {item.customization.totalCustomizationCost.toLocaleString(
+                                            'en-PH',
+                                            {
+                                              minimumFractionDigits: 2,
+                                              maximumFractionDigits: 2
+                                            }
                                           )}
                                         </span>
                                       </div>
@@ -378,7 +397,11 @@ export default function OrderDetailsPage({ params }: OrderDetailsProps) {
                 <div className="flex justify-between items-center">
                   <span className="text-gray-600">Change Needed For</span>
                   <span className="font-medium">
-                    ₱{order.change_needed.toFixed(2)}
+                    ₱
+                    {order.change_needed.toLocaleString('en-PH', {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2
+                    })}
                   </span>
                 </div>
               )}
@@ -386,7 +409,11 @@ export default function OrderDetailsPage({ params }: OrderDetailsProps) {
               <div className="flex justify-between items-center text-lg">
                 <span className="font-medium">Total Amount</span>
                 <span className="font-bold">
-                  ₱{order.total_amount.toFixed(2)}
+                  ₱
+                  {order.total_amount.toLocaleString('en-PH', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                  })}
                 </span>
               </div>
             </div>

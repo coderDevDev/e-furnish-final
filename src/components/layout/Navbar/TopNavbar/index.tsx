@@ -42,40 +42,20 @@ import {
   DialogTitle
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@/components/ui/select';
 
-// Update the businessPermits array with all the requested permits
-const businessPermits = [
-  {
-    id: 1,
-    name: "Mayor's Permit",
-    description: 'Business permit issued by the local government unit',
-    image: `https://btmcdhltlvydssuebwir.supabase.co/storage/v1/object/public/documents/business%20permit/Mayor's%20Permit.jpg` // Replace with actual image path
-  },
-  {
-    id: 2,
-    name: 'DTI Registration',
-    description: 'Department of Trade and Industry business registration',
-    image: `https://btmcdhltlvydssuebwir.supabase.co/storage/v1/object/public/documents/business%20permit/dti.jpg`
-  },
-  {
-    id: 3,
-    name: 'Sanitary Permit to Operate',
-    description: 'Health and sanitation certification for business operation',
-    image: `https://btmcdhltlvydssuebwir.supabase.co/storage/v1/object/public/documents/business%20permit/Sanitary%20Permit%20to%20Operate.jpg`
-  },
-  {
-    id: 4,
-    name: 'BIR Permit',
-    description: 'Bureau of Internal Revenue registration and certification',
-    image: `https://btmcdhltlvydssuebwir.supabase.co/storage/v1/object/public/documents/business%20permit/BIR.jpg`
-  },
-  {
-    id: 5,
-    name: 'Tax Clearance',
-    description: 'Certificate confirming all tax obligations have been met',
-    image: `https://btmcdhltlvydssuebwir.supabase.co/storage/v1/object/public/documents/business%20permit/tax%20clearance.jpg`
-  }
-];
+// Add interface for document info
+interface DocumentInfo {
+  url: string;
+  type: string;
+  name: string;
+}
 
 const TopNavbar = () => {
   const supabase = createClientComponentClient();
@@ -84,6 +64,11 @@ const TopNavbar = () => {
   const [isZoomed, setIsZoomed] = useState(false);
   const [zoomLevel, setZoomLevel] = useState(1);
   const imageContainerRef = useRef(null);
+  const [businessPermits, setBusinessPermits] = useState<DocumentInfo[]>([]);
+  const [currentType, setCurrentType] = useState<string>('');
+  const [currentTypePermits, setCurrentTypePermits] = useState<DocumentInfo[]>(
+    []
+  );
 
   const navMenuItems: NavMenu = [
     {
@@ -96,7 +81,7 @@ const TopNavbar = () => {
     {
       id: 2,
       type: 'MenuItem',
-      label: 'Business Permits',
+      label: 'About Us',
       url: '#',
       onClick: () => setShowPermits(true),
       children: []
@@ -116,19 +101,64 @@ const TopNavbar = () => {
     }
   };
 
+  useEffect(() => {
+    setZoomLevel(1);
+    setIsZoomed(false);
+    loadBusinessPermits();
+  }, []);
+
+  useEffect(() => {
+    if (businessPermits.length > 0) {
+      // Get unique types
+      const types = [...new Set(businessPermits.map(doc => doc.type))];
+      setCurrentType(types[0]);
+    }
+  }, [businessPermits]);
+
+  useEffect(() => {
+    // Filter permits by current type
+    const permitsOfType = businessPermits.filter(
+      doc => doc.type === currentType
+    );
+    setCurrentTypePermits(permitsOfType);
+    setCurrentPermitIndex(0); // Reset index when type changes
+  }, [currentType, businessPermits]);
+
+  const loadBusinessPermits = async () => {
+    try {
+      const {
+        data: { session }
+      } = await supabase.auth.getSession();
+      if (!session) return;
+
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('document_urls')
+        .eq('id', '55a5b517-e3f2-4460-8d17-9083923d3b43')
+        .single();
+
+      if (error) throw error;
+      if (profile?.document_urls) {
+        setBusinessPermits(profile.document_urls);
+      }
+    } catch (error) {
+      console.error('Error loading permits:', error);
+    }
+  };
+
   const nextPermit = () => {
     setCurrentPermitIndex(prev =>
-      prev === businessPermits.length - 1 ? 0 : prev + 1
+      prev === currentTypePermits.length - 1 ? 0 : prev + 1
     );
   };
 
   const prevPermit = () => {
     setCurrentPermitIndex(prev =>
-      prev === 0 ? businessPermits.length - 1 : prev - 1
+      prev === 0 ? currentTypePermits.length - 1 : prev - 1
     );
   };
 
-  const currentPermit = businessPermits[currentPermitIndex];
+  const currentPermit = currentTypePermits[currentPermitIndex];
 
   const handleZoomIn = e => {
     e.stopPropagation();
@@ -157,11 +187,6 @@ const TopNavbar = () => {
       setIsZoomed(true);
     }
   };
-
-  useEffect(() => {
-    setZoomLevel(1);
-    setIsZoomed(false);
-  }, [currentPermitIndex]);
 
   return (
     <nav className="sticky top-0 bg-white z-20 border-b border-secondary border-b-2">
@@ -244,7 +269,7 @@ const TopNavbar = () => {
                 className="cursor-pointer"
                 onClick={() => setShowPermits(true)}>
                 <FileText className="mr-2 h-4 w-4" />
-                Business Permits
+                About Us
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
@@ -260,7 +285,7 @@ const TopNavbar = () => {
 
       {/* Business Permits Dialog */}
       <Dialog open={showPermits} onOpenChange={setShowPermits}>
-        <DialogContent className="max-w-3xl sm:max-w-[95%] md:max-w-2xl lg:max-w-3xl max-h-[90vh] overflow-auto p-4 sm:p-6">
+        <DialogContent className="max-w-3xl">
           <DialogHeader className="mb-2 sm:mb-4">
             <DialogTitle className="text-lg sm:text-xl">
               Business Permits & Certifications
@@ -270,122 +295,135 @@ const TopNavbar = () => {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="relative">
-            <div className="flex justify-center items-center min-h-[200px] sm:min-h-[300px] md:min-h-[400px] bg-gray-100 rounded-md overflow-hidden">
-              {/* Image container with better error handling */}
-              <div
-                ref={imageContainerRef}
-                className="relative w-full h-full flex justify-center items-center p-2 sm:p-4 overflow-hidden">
-                {currentPermit ? (
-                  <div className="relative flex justify-center">
-                    <div
-                      className={`relative ${
-                        isZoomed ? 'cursor-move' : 'cursor-zoom-in'
-                      } transition-transform duration-200`}
-                      onClick={toggleZoom}>
-                      <Image
-                        src={currentPermit.image}
-                        alt={currentPermit.name}
-                        width={600}
-                        height={800}
-                        className={`object-contain ${
-                          isZoomed
-                            ? 'max-h-none'
-                            : 'w-auto h-auto max-h-[250px] sm:max-h-[350px] md:max-h-[500px]'
-                        }`}
-                        style={{
-                          transform: `scale(${zoomLevel})`,
-                          transformOrigin: 'center',
-                          transition: 'transform 0.3s ease'
-                        }}
-                        onError={e => {
-                          // Fallback if image fails to load
-                          e.currentTarget.src = '/placeholder-document.png';
-                        }}
-                      />
-                    </div>
-
-                    {/* Zoom controls */}
-                    <div className="absolute bottom-2 right-2 flex space-x-2">
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        className="h-8 w-8 rounded-full bg-white/80 hover:bg-white shadow-md"
-                        onClick={handleZoomOut}
-                        disabled={zoomLevel <= 1}>
-                        <ZoomOut className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        className="h-8 w-8 rounded-full bg-white/80 hover:bg-white shadow-md"
-                        onClick={handleZoomIn}
-                        disabled={zoomLevel >= 3}>
-                        <ZoomIn className="h-4 w-4" />
-                      </Button>
-                    </div>
-
-                    {/* Zoom indicator */}
-                    {isZoomed && (
-                      <div className="absolute top-2 left-2 bg-black/50 text-white text-xs p-1 rounded">
-                        <Move className="h-4 w-4 inline mr-1" />
-                        {Math.round(zoomLevel * 100)}%
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <div className="text-center text-gray-500">
-                    <FileText className="mx-auto h-8 w-8 sm:h-12 sm:w-12 mb-2" />
-                    <p>No permits available</p>
-                  </div>
+          {/* Document type selector */}
+          <div className="mb-4">
+            <Select value={currentType} onValueChange={setCurrentType}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select document type" />
+              </SelectTrigger>
+              <SelectContent>
+                {[...new Set(businessPermits.map(doc => doc.type))].map(
+                  type => (
+                    <SelectItem key={type} value={type}>
+                      {type}
+                    </SelectItem>
+                  )
                 )}
-              </div>
+              </SelectContent>
+            </Select>
+          </div>
 
-              {/* Navigation controls - adjusted for mobile */}
-              {businessPermits.length > 1 && (
-                <>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="absolute left-1 sm:left-2 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white rounded-full h-8 w-8 sm:h-10 sm:w-10"
-                    onClick={prevPermit}>
-                    <ChevronLeft className="h-4 w-4 sm:h-6 sm:w-6" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="absolute right-1 sm:right-2 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white rounded-full h-8 w-8 sm:h-10 sm:w-10"
-                    onClick={nextPermit}>
-                    <ChevronRight className="h-4 w-4 sm:h-6 sm:w-6" />
-                  </Button>
-                </>
+          <div className="relative">
+            {/* Image viewer */}
+            <div className="flex justify-center items-center min-h-[200px] sm:min-h-[300px] md:min-h-[400px] bg-gray-100 rounded-md overflow-hidden">
+              {currentPermit ? (
+                <div
+                  ref={imageContainerRef}
+                  className="relative w-full h-full flex justify-center items-center p-2 sm:p-4 overflow-hidden">
+                  <div
+                    className={`relative ${
+                      isZoomed ? 'cursor-move' : 'cursor-zoom-in'
+                    } transition-transform duration-200`}
+                    onClick={toggleZoom}>
+                    <Image
+                      src={currentPermit.url}
+                      alt={currentPermit.name}
+                      width={600}
+                      height={800}
+                      className={`object-contain ${
+                        isZoomed
+                          ? 'max-h-none'
+                          : 'w-auto h-auto max-h-[250px] sm:max-h-[350px] md:max-h-[500px]'
+                      }`}
+                      style={{
+                        transform: `scale(${zoomLevel})`,
+                        transformOrigin: 'center',
+                        transition: 'transform 0.3s ease'
+                      }}
+                      onError={e => {
+                        e.currentTarget.src = '/placeholder-document.png';
+                      }}
+                    />
+                  </div>
+
+                  {/* Zoom controls */}
+                  <div className="absolute bottom-2 right-2 flex space-x-2">
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      className="h-8 w-8 rounded-full bg-white/80 hover:bg-white shadow-md"
+                      onClick={handleZoomOut}
+                      disabled={zoomLevel <= 1}>
+                      <ZoomOut className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      className="h-8 w-8 rounded-full bg-white/80 hover:bg-white shadow-md"
+                      onClick={handleZoomIn}
+                      disabled={zoomLevel >= 3}>
+                      <ZoomIn className="h-4 w-4" />
+                    </Button>
+                  </div>
+
+                  {/* Zoom indicator */}
+                  {isZoomed && (
+                    <div className="absolute top-2 left-2 bg-black/50 text-white text-xs p-1 rounded">
+                      <Move className="h-4 w-4 inline mr-1" />
+                      {Math.round(zoomLevel * 100)}%
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="text-center text-gray-500">
+                  <FileText className="mx-auto h-8 w-8 sm:h-12 sm:w-12 mb-2" />
+                  <p>No documents available</p>
+                </div>
               )}
             </div>
 
-            {/* Document info and pagination indicator - responsive layout */}
-            <div className="mt-3 sm:mt-4 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
-              <div>
-                <h3 className="font-medium text-base sm:text-lg">
-                  {currentPermit?.name}
-                </h3>
-                <p className="text-xs sm:text-sm text-gray-500">
-                  {currentPermit?.description}
-                </p>
-              </div>
+            {/* Navigation controls */}
+            {currentTypePermits.length > 1 && (
+              <>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="absolute left-1 sm:left-2 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white rounded-full h-8 w-8 sm:h-10 sm:w-10"
+                  onClick={prevPermit}>
+                  <ChevronLeft className="h-4 w-4 sm:h-6 sm:w-6" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-1 sm:right-2 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white rounded-full h-8 w-8 sm:h-10 sm:w-10"
+                  onClick={nextPermit}>
+                  <ChevronRight className="h-4 w-4 sm:h-6 sm:w-6" />
+                </Button>
+              </>
+            )}
+          </div>
 
-              <div className="flex items-center space-x-1 sm:space-x-2 self-center sm:self-auto mt-2 sm:mt-0">
-                {businessPermits.map((_, index) => (
-                  <span
-                    key={index}
-                    className={`block h-2 w-2 sm:h-2.5 sm:w-2.5 rounded-full cursor-pointer ${
-                      index === currentPermitIndex
-                        ? 'bg-primary'
-                        : 'bg-gray-300'
-                    }`}
-                    onClick={() => setCurrentPermitIndex(index)}
-                  />
-                ))}
-              </div>
+          {/* Document info and pagination */}
+          <div className="mt-3 sm:mt-4 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
+            <div>
+              <h3 className="font-medium text-base sm:text-lg">
+                {currentPermit?.name}
+              </h3>
+              <p className="text-xs sm:text-sm text-gray-500">
+                {currentPermit?.type}
+              </p>
+            </div>
+
+            <div className="flex items-center space-x-1 sm:space-x-2 self-center sm:self-auto mt-2 sm:mt-0">
+              {currentTypePermits.map((_, index) => (
+                <span
+                  key={index}
+                  className={`block h-2 w-2 sm:h-2.5 sm:w-2.5 rounded-full cursor-pointer ${
+                    index === currentPermitIndex ? 'bg-primary' : 'bg-gray-300'
+                  }`}
+                  onClick={() => setCurrentPermitIndex(index)}
+                />
+              ))}
             </div>
           </div>
         </DialogContent>

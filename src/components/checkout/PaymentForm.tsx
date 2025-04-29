@@ -215,15 +215,15 @@ export function PaymentForm({ onNext }: PaymentFormProps) {
 
       doc.setFontSize(20);
       doc.setFont('helvetica', 'bold');
-      doc.text('eFurnish', 15, 20);
+      doc.text('Manonson Furniture Shop', 15, 20);
 
       doc.setFontSize(10);
       doc.setFont('helvetica', 'normal');
       doc.text('Quality Furniture Specialists', 15, 25);
-      doc.text('123 Furniture Avenue', 150, 15);
-      doc.text('Metro Manila, Philippines', 150, 20);
-      doc.text('Tel: +63 2 1234 5678', 150, 25);
-      doc.text('www.efurnish.com', 150, 30);
+      doc.text('', 150, 15);
+      doc.text('Zone 2, Colacling, Lupi, Camarines Sur', 150, 20);
+      doc.text('Tel: +63992771013 ', 150, 25);
+      doc.text('e-furnish-final.vercel.app', 150, 30);
 
       doc.line(15, 32, 195, 32);
 
@@ -285,7 +285,7 @@ export function PaymentForm({ onNext }: PaymentFormProps) {
         'Quantity',
         'Description',
         'Unit Price',
-        'VAT',
+        // 'VAT',
         'Total',
         'Expected Delivery'
       ];
@@ -295,7 +295,8 @@ export function PaymentForm({ onNext }: PaymentFormProps) {
       items.forEach(item => {
         const itemPrice = item.product.price;
         const totalPrice = itemPrice * item.quantity;
-        const vat = totalPrice * 0.12;
+        // const vat = totalPrice * 0.12;
+        const vat = 0;
 
         const deliveryDate = format(
           new Date(new Date().setDate(new Date().getDate() + 7)),
@@ -376,10 +377,10 @@ export function PaymentForm({ onNext }: PaymentFormProps) {
       doc.text('Total Net:', 130, finalY);
       doc.text(subtotalString, 170, finalY);
 
-      doc.text('VAT:', 130, finalY + 5);
-      doc.text(vatString, 170, finalY + 5);
+      // doc.text('VAT:', 130, finalY + 5);
+      // doc.text(vatString, 170, finalY + 5);
 
-      doc.text('Total Gross:', 130, finalY + 10);
+      // doc.text('Total Gross:', 130, finalY + 10);
       doc.text(totalString, 170, finalY + 10);
 
       doc.setFontSize(8);

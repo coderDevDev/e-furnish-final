@@ -79,7 +79,11 @@ export default function SupplierOfferDetailsModal({
                 <CreditCard className="h-4 w-4 text-slate-400" />
                 <span className="text-sm font-medium">Price per Unit:</span>
                 <span className="text-sm">
-                  {offer.currency} {offer.price_per_unit.toFixed(2)}
+                  {offer.currency}{' '}
+                  {offer.price_per_unit.toLocaleString('en-PH', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                  })}
                 </span>
               </div>
               <div className="flex items-center gap-2">
@@ -91,7 +95,11 @@ export default function SupplierOfferDetailsModal({
               <div className="flex items-center gap-2">
                 <span className="text-sm font-medium">Total Price:</span>
                 <span className="text-sm font-semibold text-primary">
-                  {offer.currency} {offer.total_price.toFixed(2)}
+                  {offer.currency}{' '}
+                  {offer.total_price.toLocaleString('en-PH', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                  })}
                 </span>
               </div>
             </div>

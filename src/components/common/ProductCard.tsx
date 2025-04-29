@@ -65,7 +65,10 @@ const ProductCard = ({ data }: ProductCardProps) => {
         ) : (
           <span className="font-bold text-black text-xl xl:text-2xl">
             {/* like P250.00 and wit comma  */}₱
-            {data.price.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+            {data.price.toLocaleString('en-PH', {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2
+            })}
           </span>
         )}
         {data.discount.percentage > 0 && (

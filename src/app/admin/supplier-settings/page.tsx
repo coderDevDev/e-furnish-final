@@ -110,7 +110,7 @@ export default function SupplierSettingsPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <OrderHistory />
+              <OrderHistory role="admin" />
             </CardContent>
           </Card>
         </TabsContent>

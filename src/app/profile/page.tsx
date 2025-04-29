@@ -38,6 +38,7 @@ import {
 import OrderHistory from './components/OrderHistory';
 import AddressBook from './components/AddressBook';
 import PaymentMethods from './components/PaymentMethods';
+import PermitsTab from './components/PermitsTab';
 
 const profileSchema = z.object({
   full_name: z.string().min(1, 'Full name is required'),
@@ -180,9 +181,9 @@ export default function ProfilePage() {
     <div className="container max-w-4xl mx-auto px-4 py-8 sm:py-10">
       <Tabs defaultValue="profile" className="space-y-6">
         <div className="flex justify-center mb-4">
-          <TabsList className="grid w-full max-w-md grid-cols-1">
+          <TabsList className="grid w-full max-w-md grid-cols-2">
             <TabsTrigger value="profile">Profile</TabsTrigger>
-            {/* <TabsTrigger value="orders">Orders</TabsTrigger> */}
+            <TabsTrigger value="permits">Permits</TabsTrigger>
             {/* <TabsTrigger value="addresses">Addresses</TabsTrigger>
             <TabsTrigger value="payments">Payments</TabsTrigger> */}
           </TabsList>
@@ -369,8 +370,8 @@ export default function ProfilePage() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="orders">
-          <OrderHistory />
+        <TabsContent value="permits">
+          <PermitsTab />
         </TabsContent>
 
         {/* <TabsContent value="addresses">

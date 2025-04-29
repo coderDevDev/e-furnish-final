@@ -96,7 +96,11 @@ async function TotalRevenueCard({ supplierId = null }) {
       </CardHeader>
       <CardContent>
         <div className="text-2xl font-bold">
-          ₱{totalRevenue.toLocaleString()}
+          ₱
+          {totalRevenue.toLocaleString('en-PH', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+          })}
         </div>
         <div className="flex items-center pt-1">
           <span
@@ -104,7 +108,11 @@ async function TotalRevenueCard({ supplierId = null }) {
               isPositiveChange ? 'text-green-500' : 'text-red-500'
             }`}>
             {isPositiveChange ? '+' : ''}
-            {percentChange.toFixed(1)}%
+            {percentChange.toLocaleString('en-PH', {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2
+            })}
+            %
           </span>
           <TrendingUp
             className={`h-3 w-3 ml-1 ${
@@ -116,7 +124,11 @@ async function TotalRevenueCard({ supplierId = null }) {
           </span>
         </div>
         <p className="text-xs text-muted-foreground mt-1">
-          Last 30 days: ₱{recentRevenue.toLocaleString()}
+          Last 30 days: ₱
+          {recentRevenue.toLocaleString('en-PH', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+          })}
         </p>
       </CardContent>
     </Card>

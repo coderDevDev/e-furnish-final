@@ -239,7 +239,13 @@ const ProductCard = ({ data, index }: ProductCardProps) => {
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
-          <span className="font-medium">₱{finalPrice.toLocaleString()}</span>
+          <span className="font-medium">
+            ₱
+            {finalPrice.toLocaleString('en-US', {
+              style: 'currency',
+              currency: 'PHP'
+            })}
+          </span>
         </div>
       </div>
     </div>

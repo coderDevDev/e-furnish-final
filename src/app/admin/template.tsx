@@ -42,7 +42,7 @@ const adminLinks = [
     icon: RiUser3Line
   },
   {
-    label: 'Shipping Settingss',
+    label: 'Shipping Settings',
     href: '/admin/settings',
     icon: RiSettings4Line
   },

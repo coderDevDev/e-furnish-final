@@ -8,21 +8,28 @@ export interface ShippingSettings {
   updated_at?: string;
 }
 
+const supabase = createClientComponentClient();
+
 export const shippingService = {
   async getShippingSettings(): Promise<ShippingSettings> {
     try {
-      const response = await fetch('/api/shipping/settings', {
-        cache: 'no-store'
-      });
+      const { data, error } = await supabase
+        .from('settings')
+        .select('*')
+        .eq('key', 'shipping_settings')
+        .single();
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
+      if (error) throw error;
 
-      const data = await response.json();
       return {
-        freeShippingAreas: data.freeShippingAreas || [],
-        standardShippingFee: data.standardShippingFee || 500
+        freeShippingAreas: data?.value?.freeShippingAreas || [
+          'Cabusao',
+          'Del Gallego',
+          'Lupi',
+          'Ragay',
+          'Sipocot'
+        ],
+        standardShippingFee: data?.value?.standardShippingFee || 500
       };
     } catch (error) {
       console.error('Error in getShippingSettings:', error);
@@ -42,23 +49,36 @@ export const shippingService = {
 
   async updateShippingSettings(settings: ShippingSettings): Promise<void> {
     try {
-      const response = await fetch('/api/shipping/settings', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
+      const { error } = await supabase.from('settings').upsert(
+        {
+          key: 'shipping_settings',
+          value: {
+            freeShippingAreas: settings.freeShippingAreas,
+            standardShippingFee: settings.standardShippingFee
+          },
+          updated_at: new Date().toISOString()
         },
-        body: JSON.stringify({
-          freeShippingAreas: settings.freeShippingAreas,
-          standardShippingFee: settings.standardShippingFee
-        })
-      });
+        {
+          onConflict: 'key'
+        }
+      );
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
+      if (error) throw error;
     } catch (error) {
       console.error('Error updating shipping settings:', error);
       throw error;
     }
+  },
+
+  calculateShippingFee(
+    municipality: string,
+    freeShippingAreas: string[]
+  ): number {
+    // Check if municipality is in free shipping areas
+    if (freeShippingAreas.includes(municipality)) {
+      return 0;
+    }
+    // Return standard shipping fee
+    return 500;
   }
 };
