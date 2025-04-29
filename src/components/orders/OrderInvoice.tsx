@@ -63,11 +63,11 @@ const OrderInvoice = forwardRef<HTMLDivElement, OrderInvoiceProps>(
     }, [order]);
 
     const defaultBusinessInfo = {
-      name: 'E-Furnish Store',
-      address: 'Quezon City, Philippines',
-      phone: '+63 (XXX) XXX-XXXX',
+      name: 'Manonson Furniture Shop',
+      address: 'Zone 2, Colacling Lupi, Camarines Sur',
+      phone: '+63992771013 ',
       email: 'support@efurnish.com',
-      website: 'www.efurnish.com',
+      website: 'e-furnish-final.vercel.app',
       logo: '/logo.png'
     };
 
