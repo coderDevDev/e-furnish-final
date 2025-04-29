@@ -8,7 +8,7 @@ export const notify = {
   },
 
   criticalStock: (itemName: string, quantity: number) => {
-    toast.error(`Critical Stock Alert`, {
+    toast.error(`Out of stock Alert`, {
       description: `${itemName} is critically low (${quantity} units remaining)`
     });
   },

@@ -252,7 +252,10 @@ export default function AdminPage() {
     },
     {
       label: 'Total Revenue',
-      value: `₱${stats.totalRevenue.toLocaleString()}`,
+      value: `₱${stats.totalRevenue.toLocaleString('en-PH', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      })}`,
       icon: PhilippinePeso,
       change: '',
       color: 'bg-green-50 text-green-700'
@@ -449,7 +452,11 @@ export default function AdminPage() {
                               {order.profiles?.full_name || 'Unknown'}
                             </td>
                             <td className="py-3">
-                              ₱{order.total_amount?.toLocaleString()}
+                              ₱
+                              {order.total_amount?.toLocaleString('en-PH', {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2
+                              })}
                             </td>
                             <td className="py-3">
                               <span

@@ -9,7 +9,8 @@ import {
   FormField,
   FormItem,
   FormLabel,
-  FormMessage
+  FormMessage,
+  FormDescription
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -18,7 +19,11 @@ import { Loader2 } from 'lucide-react';
 import { authService } from '@/lib/services/authService';
 import { toast } from 'sonner';
 import { useAppDispatch } from '@/lib/hooks/redux';
-import { setDeliveryAddress } from '@/lib/features/checkout/checkoutSlice';
+import {
+  setDeliveryAddress,
+  setShippingFee
+} from '@/lib/features/checkout/checkoutSlice';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 
 import {
   locationService,
@@ -61,12 +66,19 @@ const formSchema = z.object({
   barangay: z.string().min(1, {
     message: 'Please select a barangay.'
   }),
-  zipCode: z.string().min(4, {
-    message: 'ZIP code must be at least 4 characters.'
-  })
+  zipCode: z
+    .string()
+    .min(4, 'ZIP code must be exactly 4 digits')
+    .max(4, 'ZIP code must be exactly 4 digits')
+    .regex(/^[0-9]{4}$/, 'ZIP code must contain only 4 digits')
 });
 
 type ShippingFormValues = z.infer<typeof formSchema>;
+
+type ShippingSettings = {
+  freeShippingAreas: string[];
+  standardShippingFee: number;
+};
 
 export function ShippingForm({ onNext }: { onNext: () => void }) {
   const dispatch = useAppDispatch();
@@ -75,6 +87,9 @@ export function ShippingForm({ onNext }: { onNext: () => void }) {
   const [provinces, setProvinces] = useState<Province[]>([]);
   const [cities, setCities] = useState<City[]>([]);
   const [barangays, setBarangays] = useState<Barangay[]>([]);
+  const [shippingSettings, setShippingSettings] =
+    useState<ShippingSettings | null>(null);
+  const supabase = createClientComponentClient();
 
   const form = useForm<ShippingFormValues>({
     resolver: zodResolver(formSchema),
@@ -213,6 +228,28 @@ export function ShippingForm({ onNext }: { onNext: () => void }) {
 
     loadUserProfile();
   }, [dispatch, form]);
+
+  // Load shipping settings on mount
+  useEffect(() => {
+    loadShippingSettings();
+  }, []);
+
+  const loadShippingSettings = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('settings')
+        .select('value')
+        .eq('key', 'shipping_config')
+        .single();
+
+      if (error) throw error;
+
+      const settings: ShippingSettings = data.value;
+      setShippingSettings(settings);
+    } catch (error) {
+      console.error('Error loading shipping settings:', error);
+    }
+  };
 
   async function onSubmit(values: ShippingFormValues) {
     try {
@@ -398,7 +435,26 @@ export function ShippingForm({ onNext }: { onNext: () => void }) {
                 <FormItem>
                   <FormLabel>City/Municipality</FormLabel>
                   <Select
-                    onValueChange={field.onChange}
+                    onValueChange={value => {
+                      field.onChange(value);
+                      // Get the selected city object
+                      const selectedCity = cities.find(c => c.id === value);
+                      if (selectedCity && shippingSettings) {
+                        // Check if city is in free shipping areas
+                        const isFreeShipping =
+                          shippingSettings.freeShippingAreas.some(
+                            area =>
+                              area.toLowerCase() ===
+                              selectedCity.name.toLowerCase()
+                          );
+
+                        // Set shipping fee in Redux store
+                        const fee = isFreeShipping
+                          ? 0
+                          : shippingSettings.standardShippingFee;
+                        dispatch(setShippingFee(fee));
+                      }
+                    }}
                     defaultValue={field.value}
                     disabled={!form.watch('province')}>
                     <FormControl>
@@ -414,6 +470,37 @@ export function ShippingForm({ onNext }: { onNext: () => void }) {
                       ))}
                     </SelectContent>
                   </Select>
+                  <FormDescription>
+                    {(() => {
+                      const selectedCity = cities.find(
+                        c => c.id === field.value
+                      );
+                      if (
+                        selectedCity &&
+                        shippingSettings?.freeShippingAreas.includes(
+                          selectedCity.name
+                        )
+                      ) {
+                        return (
+                          <span className="text-green-600">
+                            Free shipping available!
+                          </span>
+                        );
+                      }
+                      return (
+                        <span className="text-muted-foreground">
+                          Standard shipping fee: ₱
+                          {shippingSettings?.standardShippingFee.toLocaleString(
+                            'en-PH',
+                            {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2
+                            }
+                          )}
+                        </span>
+                      );
+                    })()}
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -455,9 +542,22 @@ export function ShippingForm({ onNext }: { onNext: () => void }) {
               <FormItem>
                 <FormLabel>ZIP/Postal Code</FormLabel>
                 <FormControl>
-                  <Input placeholder="Enter ZIP code" {...field} />
+                  <Input
+                    placeholder="4-digit code (e.g., 1000)"
+                    maxLength={4}
+                    {...field}
+                    onChange={e => {
+                      // Only allow numeric input for ZIP code
+                      const value = e.target.value.replace(/\D/g, '');
+                      e.target.value = value;
+                      field.onChange(value);
+                    }}
+                  />
                 </FormControl>
                 <FormMessage />
+                <p className="text-xs text-gray-500 mt-1">
+                  Philippine ZIP codes are 4 digits (e.g., 1000 for Manila)
+                </p>
               </FormItem>
             )}
           />

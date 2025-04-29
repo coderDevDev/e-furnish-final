@@ -10,12 +10,16 @@ import {
   FileSignature,
   Package,
   Truck,
-  ChevronRight
+  ChevronRight,
+  Settings,
+  CreditCard,
+  BarChart
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { RiLogoutBoxLine } from 'react-icons/ri';
+import { MdInventory2 } from 'react-icons/md';
 
 export default function SupplierTemplate({
   children
@@ -109,13 +113,38 @@ export default function SupplierTemplate({
     },
     {
       href: '/supplier/offers',
-      label: 'My Offers & Deals',
-      icon: <Package className="h-4 w-4 mr-2" />
+      label: 'My Offers',
+      icon: <FileSignature className="h-4 w-4 mr-2" />
     },
     {
       href: '/supplier/orders',
-      label: 'Orders from Owner',
+      label: 'Orders Management',
+      icon: <Package className="h-4 w-4 mr-2" />
+    },
+    {
+      href: '/supplier/inventory',
+      label: 'Inventory',
+      icon: <MdInventory2 className="h-4 w-4 mr-2" />
+    },
+    {
+      href: '/supplier/shipping-settings',
+      label: 'Shipping Settings',
       icon: <Truck className="h-4 w-4 mr-2" />
+    },
+    {
+      href: '/supplier/payment-options',
+      label: 'Payment Options',
+      icon: <CreditCard className="h-4 w-4 mr-2" />
+    },
+    {
+      href: '/supplier/analytics',
+      label: 'Analytics',
+      icon: <BarChart className="h-4 w-4 mr-2" />
+    },
+    {
+      href: '/supplier/settings',
+      label: 'Account Settings',
+      icon: <Settings className="h-4 w-4 mr-2" />
     }
   ];
   return (

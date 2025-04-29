@@ -76,7 +76,13 @@ export function RecentOrders() {
                 {order.status}
               </Badge>
             </TableCell>
-            <TableCell>₱{order.total_amount.toLocaleString()}</TableCell>
+            <TableCell>
+              ₱
+              {order.total_amount.toLocaleString('en-PH', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+              })}
+            </TableCell>
             <TableCell>
               <Button variant="outline" size="sm" asChild>
                 <Link href={`/admin/customer-orders/${order.id}`}>

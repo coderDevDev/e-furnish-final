@@ -52,7 +52,10 @@ export async function POST(request: Request) {
             }
             <p style="color: #666;">Updated on: ${new Date(
               statusUpdateDate
-            ).toLocaleString()}</p>
+            ).toLocaleString('en-PH', {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2
+            })}</p>
           </div>
           
           <div style="background-color: #f8f9fa; padding: 20px; margin: 20px 0;">
@@ -87,7 +90,13 @@ export async function POST(request: Request) {
               .join('')}
             
             <div style="border-top: 1px solid #dee2e6; margin-top: 10px; padding-top: 10px;">
-              <strong>Total Amount: ₱${order.total_amount.toLocaleString()}</strong>
+              <strong>Total Amount: ₱${order.total_amount.toLocaleString(
+                'en-PH',
+                {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2
+                }
+              )}</strong>
             </div>
           </div>
           
@@ -97,7 +106,10 @@ export async function POST(request: Request) {
               Order ID: #${order.id}<br>
               Payment Method: ${order.payment_method.toUpperCase()}<br>
               Payment Status: ${order.payment_status}<br>
-              Order Date: ${new Date(order.created_at).toLocaleString()}
+              Order Date: ${new Date(order.created_at).toLocaleString('en-PH', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+              })}
             </p>
           </div>
           

@@ -651,7 +651,11 @@ export default function CustomerOrdersPage() {
                               </Badge>
                             </TableCell>
                             <TableCell>
-                              ₱{order.total_amount.toLocaleString()}
+                              ₱
+                              {order.total_amount.toLocaleString('en-PH', {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2
+                              })}
                             </TableCell>
                             <TableCell className="text-right">
                               <Button variant="outline" size="sm" asChild>
@@ -881,7 +885,13 @@ function OrderStatusTable({ orders }: { orders: OrderSummary[] }) {
             <TableCell>
               {format(new Date(order.created_at), 'MMM dd, yyyy')}
             </TableCell>
-            <TableCell>₱{order.total_amount.toLocaleString()}</TableCell>
+            <TableCell>
+              ₱
+              {order.total_amount.toLocaleString('en-PH', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+              })}
+            </TableCell>
             <TableCell className="text-right">
               <Button variant="outline" size="sm" asChild>
                 <Link href={`/admin/customer-orders/${order.id}`}>

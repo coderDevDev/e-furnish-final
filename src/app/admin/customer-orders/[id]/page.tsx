@@ -49,6 +49,8 @@ import {
 import { Separator } from '@/components/ui/separator';
 import OrderInvoice from '@/components/orders/OrderInvoice';
 import { supabase } from '@/lib/supabase/config';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Label } from '@/components/ui/label';
 
 const ORDER_STATUSES = [
   'pending',
@@ -58,6 +60,46 @@ const ORDER_STATUSES = [
   'cancelled',
   'returned'
 ];
+
+// Define status reasons for each status type
+const STATUS_REASONS = {
+  pending: [
+    'Waiting for payment confirmation',
+    'Verifying order details',
+    'High order volume',
+    'Awaiting inventory check'
+  ],
+  processing: [
+    'Order being prepared',
+    'Materials being gathered',
+    'Customization in progress',
+    'Awaiting specialized components'
+  ],
+  shipped: [
+    'Package en route to destination',
+    'Picked up by courier',
+    'In transit to delivery hub',
+    'Scheduled for delivery'
+  ],
+  delivered: [
+    'Successfully delivered to recipient',
+    'Left at specified location',
+    'Signed for by recipient'
+  ],
+  cancelled: [
+    'Requested by customer',
+    'Payment issue',
+    'Material unavailability',
+    'Shipping restrictions',
+    'Out of stock'
+  ],
+  returned: [
+    'Damaged during shipping',
+    'Wrong item received',
+    'Quality issues',
+    'Customer changed mind'
+  ]
+};
 
 export default function OrderDetailsPage({
   params
@@ -74,6 +116,10 @@ export default function OrderDetailsPage({
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [showInvoice, setShowInvoice] = useState(false);
   const invoiceRef = useRef<HTMLDivElement>(null);
+  const [statusReason, setStatusReason] = useState<string>('');
+  const [customReason, setCustomReason] = useState<string>('');
+  const [showReasonSelection, setShowReasonSelection] =
+    useState<boolean>(false);
 
   useEffect(() => {
     loadOrderDetails();
@@ -135,13 +181,20 @@ export default function OrderDetailsPage({
     }
   };
 
-  const handleStatusChange = async (newStatus: string) => {
+  const handleStatusChange = async () => {
     if (!order) return;
 
     setUpdating(true);
     try {
-      await customerOrderService.updateOrderStatus(id, newStatus);
+      // Determine the reason to send
+      const reasonToSend =
+        statusReason === 'other' ? customReason : statusReason;
+
+      await customerOrderService.updateOrderStatus(id, newStatus, reasonToSend);
       toast.success('Order status updated successfully');
+      setShowReasonSelection(false);
+      setStatusReason('');
+      setCustomReason('');
       loadOrderDetails();
     } catch (error) {
       console.error('Error updating order status:', error);
@@ -149,6 +202,15 @@ export default function OrderDetailsPage({
     } finally {
       setUpdating(false);
     }
+  };
+
+  const handleStatusSelectChange = (status: string) => {
+    setNewStatus(status);
+    // Show reason selection after status is selected
+    setShowReasonSelection(true);
+    // Reset previous reason selections
+    setStatusReason('');
+    setCustomReason('');
   };
 
   const handleCancelOrder = async () => {
@@ -257,7 +319,7 @@ export default function OrderDetailsPage({
               onClick={printInvoice}
               className="flex items-center gap-2">
               <Printer className="h-4 w-4" />
-              Print Invoice
+              Print Invoices
             </Button>
             {/* <Button variant="outline" size="sm">
             <Mail className="mr-2 h-4 w-4" />
@@ -351,7 +413,7 @@ export default function OrderDetailsPage({
               <div className="flex items-center gap-4">
                 <Select
                   value={newStatus}
-                  onValueChange={handleStatusChange}
+                  onValueChange={handleStatusSelectChange}
                   disabled={updating}>
                   <SelectTrigger className="w-[200px]">
                     <SelectValue placeholder="Select status" />
@@ -364,8 +426,79 @@ export default function OrderDetailsPage({
                     ))}
                   </SelectContent>
                 </Select>
+
+                {!showReasonSelection && (
+                  <Button
+                    onClick={() => setShowReasonSelection(true)}
+                    variant="outline"
+                    disabled={updating || newStatus === order.status}>
+                    Update Status
+                  </Button>
+                )}
+
                 {updating && <Loader2 className="h-4 w-4 animate-spin" />}
               </div>
+
+              {showReasonSelection && (
+                <div className="space-y-4 mt-4 p-4 border rounded-md bg-slate-50">
+                  <h3 className="font-medium">
+                    Select reason for status change:
+                  </h3>
+
+                  <RadioGroup
+                    value={statusReason}
+                    onValueChange={setStatusReason}>
+                    {STATUS_REASONS[
+                      newStatus as keyof typeof STATUS_REASONS
+                    ]?.map((reason, index) => (
+                      <div key={index} className="flex items-center space-x-2">
+                        <RadioGroupItem value={reason} id={`reason-${index}`} />
+                        <Label htmlFor={`reason-${index}`}>{reason}</Label>
+                      </div>
+                    ))}
+
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="other" id="reason-other" />
+                      <Label htmlFor="reason-other">Other (specify)</Label>
+                    </div>
+                  </RadioGroup>
+
+                  {statusReason === 'other' && (
+                    <Textarea
+                      placeholder="Enter custom reason..."
+                      value={customReason}
+                      onChange={e => setCustomReason(e.target.value)}
+                      className="mt-2"
+                    />
+                  )}
+
+                  <div className="flex justify-end gap-2 mt-4">
+                    <Button
+                      variant="outline"
+                      onClick={() => setShowReasonSelection(false)}
+                      disabled={updating}>
+                      Cancel
+                    </Button>
+                    <Button
+                      onClick={handleStatusChange}
+                      disabled={
+                        updating ||
+                        (statusReason === 'other' && !customReason) ||
+                        !statusReason
+                      }>
+                      {updating ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Updating...
+                        </>
+                      ) : (
+                        'Update Status'
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              )}
+
               <OrderTimeline status={order.status} />
             </CardContent>
           </Card>
@@ -403,14 +536,25 @@ export default function OrderDetailsPage({
                       )}
                     </div>
                     <p className="font-medium">
-                      ₱{(item.products.price * item.quantity).toLocaleString()}
+                      ₱
+                      {(item.products.price * item.quantity).toLocaleString(
+                        'en-PH',
+                        {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2
+                        }
+                      )}
                     </p>
                   </div>
                 ))}
                 <div className="flex justify-between border-t pt-4">
                   <p className="font-medium">Total Amount</p>
                   <p className="font-medium">
-                    ₱{order.total_amount.toLocaleString()}
+                    ₱
+                    {order.total_amount.toLocaleString('en-PH', {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2
+                    })}
                   </p>
                 </div>
               </div>

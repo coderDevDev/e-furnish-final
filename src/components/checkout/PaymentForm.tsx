@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
@@ -38,10 +38,16 @@ import {
 } from '@/components/ui/dialog';
 import { CheckCircle2 } from 'lucide-react';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { jsPDF } from 'jspdf';
+import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
+import { format } from 'date-fns';
+import { FIRST_DISTRICT_MUNICIPALITIES } from '@/lib/utils/shipping';
 
 const formSchema = z.object({
   paymentMethod: z.enum(['cod', 'paypal']),
-  changeNeeded: z.string().optional()
+  changeNeeded: z.string().optional(),
+  deliveryAddress: z.string().optional()
 });
 
 type PaymentFormValues = z.infer<typeof formSchema>;
@@ -50,15 +56,25 @@ interface PaymentFormProps {
   onNext: () => void;
 }
 
+type ShippingSettings = {
+  free_shipping_areas: string[];
+  standard_shipping_fee: number;
+};
+
 export function PaymentForm({ onNext }: PaymentFormProps) {
   const [isProcessing, setIsProcessing] = useState(false);
   const [successDialogOpen, setSuccessDialogOpen] = useState(false);
   const [placedOrderId, setPlacedOrderId] = useState<string | null>(null);
   const { items } = useAppSelector(state => state.carts);
-  const shippingFee = useAppSelector(state => state.checkout.shippingFee);
   const router = useRouter();
   const dispatch = useAppDispatch();
   const supabase = createClientComponentClient();
+  const [shippingSettings, setShippingSettings] =
+    useState<ShippingSettings | null>(null);
+  const [shippingFee, setShippingFee] = useState<number>(0);
+  const deliveryAddress = useAppSelector(
+    state => state.checkout.deliveryAddress
+  );
 
   const hasItems = items && items.length > 0;
   const calculateTotals = () => {
@@ -96,12 +112,70 @@ export function PaymentForm({ onNext }: PaymentFormProps) {
 
   const selectedMethod = form.watch('paymentMethod');
 
-  // New function to update product stock and sales count
+  useEffect(() => {
+    loadShippingSettings();
+  }, []);
+
+  const loadShippingSettings = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('shipping_settings')
+        .select('*')
+        .single();
+
+      if (error) throw error;
+      setShippingSettings(data);
+    } catch (error) {
+      console.error('Error loading shipping settings:', error);
+      toast.error('Failed to load shipping settings');
+    }
+  };
+
+  const isAreaEligibleForFreeShipping = (area: string) => {
+    return shippingSettings?.free_shipping_areas.some(
+      freeArea => freeArea.toLowerCase() === area.toLowerCase()
+    );
+  };
+
+  const calculateShippingFee = (address: string) => {
+    const municipality = extractMunicipalityFromAddress(address);
+    if (isAreaEligibleForFreeShipping(municipality)) {
+      return 0;
+    }
+    return shippingSettings?.standard_shipping_fee || 500;
+  };
+
+  const extractMunicipalityFromAddress = (address: string) => {
+    const municipalityKeywords = {
+      'naga city': 'Naga City',
+      naga: 'Naga City',
+      bombon: 'Bombon',
+      calabanga: 'Calabanga',
+      camaligan: 'Camaligan',
+      canaman: 'Canaman',
+      gainza: 'Gainza',
+      magarao: 'Magarao',
+      milaor: 'Milaor',
+      minalabac: 'Minalabac',
+      pamplona: 'Pamplona',
+      pasacao: 'Pasacao',
+      'san fernando': 'San Fernando'
+    };
+
+    const lowerAddress = address.toLowerCase();
+
+    for (const [keyword, fullName] of Object.entries(municipalityKeywords)) {
+      if (lowerAddress.includes(keyword)) {
+        return fullName;
+      }
+    }
+
+    return 'other';
+  };
+
   const updateProductInventory = async orderItems => {
     try {
-      // For each product in the order, we need to update the stock and sales_count
       for (const item of orderItems) {
-        // Get current product data
         const { data: productData, error: productError } = await supabase
           .from('products')
           .select('stock, sales_count')
@@ -110,15 +184,13 @@ export function PaymentForm({ onNext }: PaymentFormProps) {
 
         if (productError) {
           console.error('Error fetching product data:', productError);
-          continue; // Skip to next item if there's an error
+          continue;
         }
 
-        // Calculate new stock and sales_count
         const newStock = Math.max(0, (productData.stock || 0) - item.quantity);
         const newSalesCount =
           (parseInt(productData.sales_count) || 0) + parseInt(item.quantity);
 
-        // Update the product
         const { error: updateError } = await supabase
           .from('products')
           .update({
@@ -137,7 +209,211 @@ export function PaymentForm({ onNext }: PaymentFormProps) {
     }
   };
 
+  const generateOrderAcknowledgment = (orderData, userProfile) => {
+    try {
+      const doc = new jsPDF();
+
+      doc.setFontSize(20);
+      doc.setFont('helvetica', 'bold');
+      doc.text('eFurnish', 15, 20);
+
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      doc.text('Quality Furniture Specialists', 15, 25);
+      doc.text('123 Furniture Avenue', 150, 15);
+      doc.text('Metro Manila, Philippines', 150, 20);
+      doc.text('Tel: +63 2 1234 5678', 150, 25);
+      doc.text('www.efurnish.com', 150, 30);
+
+      doc.line(15, 32, 195, 32);
+
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
+      doc.text('ORDER ACKNOWLEDGEMENT No ' + String(orderData.id), 105, 42, {
+        align: 'center'
+      });
+
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+
+      doc.text('Customer:', 15, 55);
+      doc.text(userProfile.profile.full_name, 15, 60);
+
+      if (userProfile.profile.address) {
+        const address = userProfile.profile.address;
+        const addressLines = [
+          address.street || '',
+          address.barangay_name || '',
+          address.city_name || '',
+          address.province_name || '',
+          address.zip_code || ''
+        ].filter(Boolean);
+
+        let y = 65;
+        addressLines.forEach(line => {
+          doc.text(line, 15, y);
+          y += 5;
+        });
+
+        doc.text(userProfile.profile.email || '', 15, y + 5);
+        doc.text(userProfile.profile.phone || '', 15, y + 10);
+      }
+
+      doc.text('Your Order No:', 130, 55);
+      doc.text(String(orderData.id), 170, 55);
+
+      doc.text('Date:', 130, 60);
+      doc.text(format(new Date(), 'MM/dd/yyyy'), 170, 60);
+
+      doc.text('Your Account No:', 130, 65);
+      doc.text(String(userProfile.user.id).substring(0, 8), 170, 65);
+
+      doc.text('All Prices in:', 130, 70);
+      doc.text('Philippine Peso (₱)', 170, 70);
+
+      doc.text('Page:', 130, 75);
+      doc.text('1 of 1', 170, 75);
+
+      doc.setFontSize(8);
+      doc.text(
+        'Thank you for your purchase order. We have pleasure in confirming price and delivery for the items ordered, as follows:',
+        15,
+        85
+      );
+
+      const tableColumn = [
+        'Quantity',
+        'Description',
+        'Unit Price',
+        'VAT',
+        'Total',
+        'Expected Delivery'
+      ];
+
+      const tableRows = [];
+
+      items.forEach(item => {
+        const itemPrice = item.product.price;
+        const totalPrice = itemPrice * item.quantity;
+        const vat = totalPrice * 0.12;
+
+        const deliveryDate = format(
+          new Date(new Date().setDate(new Date().getDate() + 7)),
+          'MM/dd/yyyy'
+        );
+
+        tableRows.push([
+          item.quantity.toString(),
+          item.product.title +
+            (item.product.customization ? ' (Customized)' : ''),
+          '₱' +
+            itemPrice.toLocaleString('en-PH', {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2
+            }),
+          '₱' +
+            vat.toLocaleString('en-PH', {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2
+            }),
+          '₱' +
+            totalPrice.toLocaleString('en-PH', {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2
+            }),
+          deliveryDate
+        ]);
+      });
+
+      tableRows.push([
+        '1',
+        'Shipping Fee',
+        '₱' +
+          shippingFee.toLocaleString('en-PH', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+          }),
+        '₱0.00',
+        '₱' +
+          shippingFee.toLocaleString('en-PH', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+          }),
+        '-'
+      ]);
+
+      autoTable(doc, {
+        head: [tableColumn],
+        body: tableRows,
+        startY: 90,
+        styles: { fontSize: 8 },
+        headStyles: { fillColor: [41, 128, 185] }
+      });
+
+      const finalY = (doc as any).lastAutoTable.finalY + 10;
+
+      const subtotalString =
+        '₱' +
+        calculateTotals().subtotal.toLocaleString('en-PH', {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
+        });
+
+      const vatString =
+        '₱' +
+        (calculateTotals().subtotal * 0.12).toLocaleString('en-PH', {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
+        });
+
+      const totalString =
+        '₱' +
+        total.toLocaleString('en-PH', {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
+        });
+
+      doc.text('Total Net:', 130, finalY);
+      doc.text(subtotalString, 170, finalY);
+
+      doc.text('VAT:', 130, finalY + 5);
+      doc.text(vatString, 170, finalY + 5);
+
+      doc.text('Total Gross:', 130, finalY + 10);
+      doc.text(totalString, 170, finalY + 10);
+
+      doc.setFontSize(8);
+      doc.text(
+        'eFurnish terms and conditions available on request',
+        15,
+        finalY + 20
+      );
+
+      doc.text('Goods to be delivered to:', 15, finalY + 30);
+      if (userProfile.profile.address) {
+        const address = userProfile.profile.address;
+        doc.text(`${userProfile.profile.full_name}`, 15, finalY + 35);
+        doc.text(
+          `${address.street}, ${address.barangay_name}`,
+          15,
+          finalY + 40
+        );
+        doc.text(
+          `${address.city_name}, ${address.province_name} ${address.zip_code}`,
+          15,
+          finalY + 45
+        );
+      }
+
+      doc.save(`eFurnish_Order_${orderData.id}_Acknowledgment.pdf`);
+    } catch (error) {
+      console.error('Error generating order acknowledgment:', error);
+      toast.error('Failed to generate order acknowledgment document');
+    }
+  };
+
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    console.log({ hasItems });
     if (!hasItems) return;
 
     setIsProcessing(true);
@@ -153,11 +429,23 @@ export function PaymentForm({ onNext }: PaymentFormProps) {
         item_total: item.product.price * item.quantity
       }));
 
+      if (!deliveryAddress?.address) {
+        throw new Error('Delivery address is required');
+      }
+
+      const calculatedShippingFee = calculateShippingFee(
+        deliveryAddress.address
+      );
+
       const { data: order, error } = await authService.createOrder({
         user_id: userProfile.user.id,
         items: orderItems,
         total_amount: total,
-        shipping_fee: shippingFee,
+        shipping_fee: calculatedShippingFee,
+        delivery_address: deliveryAddress.address,
+        delivery_municipality: extractMunicipalityFromAddress(
+          deliveryAddress.address
+        ),
         payment_method: values.paymentMethod,
         payment_status: 'pending',
         shipping_address: userProfile.profile.address,
@@ -169,15 +457,15 @@ export function PaymentForm({ onNext }: PaymentFormProps) {
       if (error) throw error;
       if (!order) throw new Error('Failed to create order');
 
-      // Update product inventory after successful order creation
       await updateProductInventory(orderItems);
 
-      // Optional: Send email confirmation
+      console.log({ order });
+      generateOrderAcknowledgment(order, userProfile);
+
       try {
         await authService.sendOrderConfirmationEmail(order.id);
       } catch (emailError) {
         console.error('Error sending order confirmation email:', emailError);
-        // Don't throw here, as the order was still created successfully
       }
 
       setPlacedOrderId(order.id);
@@ -261,30 +549,19 @@ export function PaymentForm({ onNext }: PaymentFormProps) {
 
           {selectedMethod === 'cod' ? (
             <>
-              {/* <Alert className="bg-blue-50 text-blue-800 border-blue-200">
-                <AlertDescription>
-                  Please prepare the exact amount of ₱{total.toLocaleString()}{' '}
-                  upon delivery.
-                </AlertDescription>
-              </Alert> */}
-
-              {/* <FormField
+              <FormField
                 control={form.control}
-                name="changeNeeded"
+                name="deliveryAddress"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Need change for? (Optional)</FormLabel>
+                    <FormLabel>Delivery Address</FormLabel>
                     <FormControl>
-                      <Input
-                        type="number"
-                        placeholder="Enter amount if you need change"
-                        {...field}
-                      />
+                      <Input {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
-              /> */}
+              />
 
               <Button
                 type="submit"
@@ -308,7 +585,41 @@ export function PaymentForm({ onNext }: PaymentFormProps) {
         </form>
       </Form>
 
-      {/* Success Dialog */}
+      <div className="space-y-2 p-4 bg-muted rounded-md">
+        <div className="flex justify-between">
+          <span className="text-sm">Subtotal:</span>
+          <span className="text-sm">
+            ₱
+            {calculateTotals().subtotal.toLocaleString('en-PH', {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2
+            })}
+          </span>
+        </div>
+        <div className="flex justify-between">
+          <span className="text-sm">Shipping Fee:</span>
+          <span className="text-sm">
+            {shippingFee === 0
+              ? 'Free Shipping'
+              : `₱${shippingFee.toLocaleString('en-PH', {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2
+                })}`}
+          </span>
+        </div>
+        {/* <Separator /> */}
+        <div className="flex justify-between font-medium">
+          <span>Total:</span>
+          <span>
+            ₱
+            {calculateTotals().total.toLocaleString('en-PH', {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2
+            })}
+          </span>
+        </div>
+      </div>
+
       <Dialog open={successDialogOpen} onOpenChange={setSuccessDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>

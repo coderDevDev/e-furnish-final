@@ -196,19 +196,19 @@ export default function LoginPage() {
 
   return isLoggedIn === false ? (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-3xl w-full space-y-8">
+      <div className="max-w-4xl w-full space-y-8">
         <div className="text-center">
-          <h2 className="mt-6 text-3xl font-bold text-gray-900">
+          <h2 className="mt-6 text-4xl font-bold text-gray-900">
             Welcome to eFurnish
           </h2>
-          <p className="mt-2 text-sm text-gray-600">
+          <p className="mt-2 text-base text-gray-600">
             Please select your role to continue
           </p>
         </div>
 
         {!showLoginForm ? (
           // Show only role selector initially
-          <div className="mt-8 bg-white py-8 px-4 shadow-xl sm:rounded-lg sm:px-10">
+          <div className="mt-8 bg-white py-10 px-6 shadow-xl sm:rounded-lg sm:px-12">
             <RoleSelector onSelect={handleRoleSelect} selectedRole={role} />
           </div>
         ) : (
@@ -218,11 +218,11 @@ export default function LoginPage() {
               <div className="flex items-center space-x-2">
                 <button
                   onClick={() => setShowLoginForm(false)}
-                  className="text-primary hover:text-primary/80 text-sm flex items-center">
+                  className="text-primary hover:text-primary/80 text-base flex items-center">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
-                    width="16"
-                    height="16"
+                    width="18"
+                    height="18"
                     viewBox="0 0 24 24"
                     fill="none"
                     stroke="currentColor"
@@ -235,22 +235,22 @@ export default function LoginPage() {
                   Change Role
                 </button>
               </div>
-              <div className="text-sm">
+              <div className="text-base">
                 Selected Role:{' '}
                 <span className="font-medium capitalize">{role}</span>
               </div>
             </div>
 
-            <div className="mt-4 bg-white py-8 px-4 shadow-xl sm:rounded-lg sm:px-10">
-              <div className="mb-6 text-center">
-                <h1 className="text-2xl font-semibold text-slate-900">Login</h1>
+            <div className="mt-4 bg-white py-10 px-6 shadow-xl sm:rounded-lg sm:px-12">
+              <div className="mb-8 text-center">
+                <h1 className="text-3xl font-semibold text-slate-900">Login</h1>
               </div>
 
-              <form onSubmit={handleLogin} className="space-y-4">
+              <form onSubmit={handleLogin} className="space-y-6">
                 <div>
                   <label
                     htmlFor="email"
-                    className="block text-sm font-medium text-slate-700">
+                    className="block text-base font-medium text-slate-700">
                     Email
                   </label>
                   <input
@@ -258,7 +258,7 @@ export default function LoginPage() {
                     type="email"
                     value={email}
                     onChange={e => setEmail(e.target.value)}
-                    className="mt-1 w-full rounded-xl border border-slate-200 px-4 py-2 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                    className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3 text-base focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                     placeholder="Enter your email"
                     disabled={loading}
                     required
@@ -268,7 +268,7 @@ export default function LoginPage() {
                 <div>
                   <label
                     htmlFor="password"
-                    className="block text-sm font-medium text-slate-700">
+                    className="block text-base font-medium text-slate-700">
                     Password
                   </label>
                   <div className="relative">
@@ -277,17 +277,17 @@ export default function LoginPage() {
                       type={showPassword ? 'text' : 'password'}
                       value={password}
                       onChange={e => setPassword(e.target.value)}
-                      className="mt-1 w-full rounded-xl border border-slate-200 px-4 py-2 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                      className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3 text-base focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                       placeholder="Enter your password"
                       disabled={loading}
                       required
                     />
                     <button
                       type="button"
-                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-500 hover:text-primary mt-1"
+                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-500 hover:text-primary mt-2"
                       onClick={() => setShowPassword(!showPassword)}
                       tabIndex={-1}>
-                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                      {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                     </button>
                   </div>
                 </div>
@@ -295,10 +295,10 @@ export default function LoginPage() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full rounded-xl bg-primary py-2 text-white hover:bg-primary/90 disabled:bg-primary/50">
+                  className="w-full rounded-xl bg-primary py-3 text-base font-medium text-white hover:bg-primary/90 disabled:bg-primary/50">
                   {loading ? (
                     <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin inline" />
+                      <Loader2 className="mr-2 h-5 w-5 animate-spin inline" />
                       <span>Signing in...</span>
                     </>
                   ) : (
@@ -307,12 +307,12 @@ export default function LoginPage() {
                 </button>
               </form>
 
-              <div className="relative my-6">
+              <div className="relative my-8">
                 <div className="absolute inset-0 flex items-center">
                   <Separator />
                 </div>
-                <div className="relative flex justify-center text-sm">
-                  <span className="bg-white px-2 text-gray-500">
+                <div className="relative flex justify-center text-base">
+                  <span className="bg-white px-3 text-gray-500">
                     Or continue with
                   </span>
                 </div>
@@ -321,24 +321,24 @@ export default function LoginPage() {
               <Button
                 type="button"
                 variant="outline"
-                className="w-full mb-4"
+                className="w-full mb-4 py-6 text-base"
                 onClick={handleGoogleLogin}
                 disabled={googleLoading || loading}>
                 {googleLoading ? (
                   <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                     <span>Connecting to Google...</span>
                   </>
                 ) : (
                   <>
-                    <FcGoogle className="mr-2 h-5 w-5" />
+                    <FcGoogle className="mr-2 h-6 w-6" />
                     <span>Sign in with Google</span>
                   </>
                 )}
               </Button>
             </div>
 
-            <p className="text-center text-sm text-gray-600">
+            <p className="text-center text-base text-gray-600 mt-4">
               Don't have an account?{' '}
               <a
                 href={`/register?role=${role}`}

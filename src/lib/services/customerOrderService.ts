@@ -160,7 +160,7 @@ class CustomerOrderService {
             order.items.length > 0
           ) {
             // Create a lookup array of product IDs to fetch
-            const productIds = order.items.map(item => item.product_id);
+            const productIds = order.items.map((item: any) => item.product_id);
 
             // Fetch products in a single query
             const { data: products } = await supabase
@@ -169,13 +169,16 @@ class CustomerOrderService {
               .in('id', productIds);
 
             // Create a product lookup map
-            const productMap = (products || []).reduce((map, product) => {
-              map[product.id] = product;
-              return map;
-            }, {});
+            const productMap = (products || []).reduce(
+              (map: Record<string, any>, product) => {
+                map[product.id] = product;
+                return map;
+              },
+              {} as Record<string, any>
+            );
 
             // Enhance items with product details
-            const enhancedItems = order.items.map(item => ({
+            const enhancedItems = order.items.map((item: any) => ({
               ...item,
               product: productMap[item.product_id] || {
                 title: `Product #${item.product_id}`,
@@ -193,7 +196,7 @@ class CustomerOrderService {
         })
       );
 
-      return enhancedData || [];
+      return (enhancedData as OrderSummary[]) || [];
     } catch (error) {
       console.error('Error in getOrders:', error);
       throw error;
@@ -260,7 +263,7 @@ class CustomerOrderService {
             shipping_address: orderDetails.shipping_address
           },
           userProfile: orderDetails.profiles,
-          orderSummary: orderDetails.order_items.map(item => ({
+          orderSummary: orderDetails.order_items.map((item: any) => ({
             id: item.id,
             name: item.products.title,
             quantity: item.quantity,

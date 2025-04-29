@@ -72,7 +72,11 @@ export function Overview() {
       y: {
         beginAtZero: true,
         ticks: {
-          callback: (value: number) => `₱${value.toLocaleString()}`
+          callback: (value: number) =>
+            `₱${value.toLocaleString('en-PH', {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2
+            })}`
         }
       }
     }

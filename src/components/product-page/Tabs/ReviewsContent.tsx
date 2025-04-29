@@ -258,13 +258,28 @@ const ReviewsContent = ({ productId }: ReviewsContentProps) => {
       return;
     }
 
+    if (!newReview.rating || newReview.rating < 1) {
+      toast.error('Please select a rating');
+      return;
+    }
+
     try {
       setIsSubmitting(true);
+
+      const {
+        data: { session }
+      } = await supabase.auth.getSession();
+
+      if (!session?.user) {
+        toast.error('You must be logged in to submit a review');
+        return;
+      }
+
       const { error } = await supabase.from('reviews').insert({
-        user_id: supabase.auth.user()?.id,
+        user_id: session.user.id,
         product_id: productId,
-        rating: newReview.rating,
-        comment: newReview.comment,
+        rating: Number(newReview.rating),
+        comment: newReview.comment.trim(),
         status: 'published'
       });
 
@@ -272,7 +287,12 @@ const ReviewsContent = ({ productId }: ReviewsContentProps) => {
 
       toast.success('Review submitted successfully');
       setShowReviewDialog(false);
+      setNewReview({
+        rating: 5,
+        comment: ''
+      });
       fetchReviews(true);
+      checkUserCanReview();
     } catch (error) {
       console.error('Error submitting review:', error);
       toast.error('Failed to submit review');
@@ -292,6 +312,12 @@ const ReviewsContent = ({ productId }: ReviewsContentProps) => {
         fillColor="orange"
         emptyColor="gray"
         className="flex"
+        onClick={(rate: number) => {
+          setNewReview(prev => ({
+            ...prev,
+            rating: rate
+          }));
+        }}
       />
     );
   };
@@ -431,7 +457,7 @@ const ReviewsContent = ({ productId }: ReviewsContentProps) => {
                 data={{
                   id: parseInt(review.id),
                   user: review.user_details?.full_name || 'Anonymous',
-                  rating: review.rating,
+                  rating: Number(review.rating),
                   comment: review.comment || undefined,
                   date: review.created_at,
                   images: []

@@ -263,7 +263,7 @@ const Header = ({ data }: { data: Product }) => {
             <p>
               <span className="font-medium">Shipping:</span> Free shipping to
               Camarines Sur (First District:{' '}
-              {FIRST_DISTRICT_MUNICIPALITIES.join(', ')}). ₱500 flat rate for
+              {FIRST_DISTRICT_MUNICIPALITIES.join(', ')}). ₱500.00 flat rate for
               all other areas.
             </p>
           </div>

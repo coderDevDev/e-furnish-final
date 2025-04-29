@@ -71,18 +71,36 @@ export default function CartPage() {
                   <div className="space-y-4">
                     <div className="flex justify-between text-black/60">
                       <span>Subtotal</span>
-                      <span>₱{subtotal.toLocaleString()}</span>
+                      <span>
+                        ₱
+                        {subtotal.toLocaleString('en-PH', {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2
+                        })}
+                      </span>
                     </div>
                     {discount > 0 && (
                       <div className="flex justify-between text-green-600">
                         <span>Discount</span>
-                        <span>-₱{discount.toLocaleString()}</span>
+                        <span>
+                          -₱
+                          {discount.toLocaleString('en-PH', {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2
+                          })}
+                        </span>
                       </div>
                     )}
                     <hr className="border-black/10" />
                     <div className="flex justify-between font-medium text-lg">
                       <span>Total</span>
-                      <span>₱{total.toLocaleString()}</span>
+                      <span>
+                        ₱
+                        {total.toLocaleString('en-PH', {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2
+                        })}
+                      </span>
                     </div>
                     <Button
                       onClick={() => router.push('/checkout')}

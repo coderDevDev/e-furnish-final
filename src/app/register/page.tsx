@@ -34,40 +34,61 @@ import {
   DialogTitle
 } from '@/components/ui/dialog';
 
-const registerSchema = z
+const formSchema = z
   .object({
-    fullName: z.string().min(2, 'Full name is required'),
-    email: z.string().email('Invalid email address'),
+    fullName: z
+      .string()
+      .min(2, 'Full name must be at least 2 characters')
+      .max(100, 'Full name cannot exceed 100 characters'),
+    username: z
+      .string()
+      .min(3, 'Username must be at least 3 characters')
+      .max(50, 'Username cannot exceed 50 characters')
+      .regex(
+        /^[a-zA-Z0-9_]+$/,
+        'Username can only contain letters, numbers, and underscores'
+      ),
+    email: z.string().email('Please enter a valid email address'),
     phone: z
       .string()
-      .min(10, 'Phone number is required')
-      .regex(/^\d+$/, 'Phone number can only contain digits'),
+      .min(11, 'Phone number must be at least 11 digits')
+      .max(13, 'Phone number cannot exceed 13 digits')
+      .regex(
+        /^(\+63|0)[0-9]{10,11}$/,
+        'Phone number must start with +63 or 0 followed by 10-11 digits'
+      ),
+    dateOfBirth: z.string().optional(),
+    gender: z.string().optional(),
     password: z
       .string()
       .min(8, 'Password must be at least 8 characters')
       .regex(
-        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
-        'Password must contain at least one uppercase letter, one lowercase letter, and one number'
+        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/,
+        'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character'
       ),
     confirmPassword: z.string(),
-    username: z.string().optional(),
-    dateOfBirth: z.string().optional(),
-    gender: z.string().optional(),
     address: z.object({
-      region_id: z.string().min(1, 'Region is required'),
-      province_id: z.string().min(1, 'Province is required'),
-      city_id: z.string().min(1, 'City is required'),
-      barangay_id: z.string().min(1, 'Barangay is required'),
-      street: z.string().min(1, 'Street address is required'),
-      zipCode: z.string().min(1, 'ZIP code is required')
+      region_id: z.string().min(1, 'Please select a region'),
+      province_id: z.string().min(1, 'Please select a province'),
+      city_id: z.string().min(1, 'Please select a city/municipality'),
+      barangay_id: z.string().min(1, 'Please select a barangay'),
+      street: z
+        .string()
+        .min(3, 'Street address must be at least 3 characters')
+        .max(100, 'Street address cannot exceed 100 characters'),
+      zipCode: z
+        .string()
+        .min(4, 'ZIP code must be 4 digits')
+        .max(4, 'ZIP code must be 4 digits')
+        .regex(/^[0-9]{4}$/, 'ZIP code must be exactly 4 digits')
     })
   })
   .refine(data => data.password === data.confirmPassword, {
-    message: "Passwords don't match",
+    message: 'Passwords do not match',
     path: ['confirmPassword']
   });
 
-type RegisterFormData = z.infer<typeof registerSchema>;
+type RegisterFormData = z.infer<typeof formSchema>;
 
 export default function RegisterPage() {
   const searchParams = useSearchParams();
@@ -91,7 +112,7 @@ export default function RegisterPage() {
     setValue,
     watch
   } = useForm<RegisterFormData>({
-    resolver: zodResolver(registerSchema)
+    resolver: zodResolver(formSchema)
   });
 
   // Watch address fields for cascading dropdowns
@@ -99,9 +120,35 @@ export default function RegisterPage() {
   const selectedProvinceId = watch('address.province_id');
   const selectedCityId = watch('address.city_id');
 
-  // Function to handle phone input to only allow numbers
-  const handlePhoneInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value.replace(/\D/g, ''); // Remove non-numeric characters
+  // Add a special handler for phone number formatting
+  const handlePhoneInput = e => {
+    let value = e.target.value.replace(/[^\d+]/g, ''); // Remove non-digits except +
+
+    // Format Philippine mobile number
+    if (value.startsWith('0')) {
+      // Keep the format 09XX...
+      if (value.length > 11) {
+        value = value.substring(0, 11);
+      }
+    } else if (value.startsWith('+')) {
+      // Format as +63XX...
+      if (value.length > 13) {
+        value = value.substring(0, 13);
+      }
+    } else if (value.startsWith('63')) {
+      // Add + prefix for country code format
+      value = '+' + value;
+      if (value.length > 13) {
+        value = value.substring(0, 13);
+      }
+    } else if (value && !value.startsWith('0') && !value.startsWith('+')) {
+      // If it starts with anything else, prefix with 0
+      value = '0' + value;
+      if (value.length > 11) {
+        value = value.substring(0, 11);
+      }
+    }
+
     setValue('phone', value);
   };
 
@@ -563,13 +610,23 @@ export default function RegisterPage() {
                   id="zipCode"
                   {...register('address.zipCode')}
                   className={errors.address?.zipCode ? 'border-red-500' : ''}
-                  placeholder="ZIP Code"
+                  placeholder="4-digit ZIP Code (e.g., 1000)"
+                  maxLength={4}
+                  onChange={e => {
+                    // Only allow digits
+                    const value = e.target.value.replace(/[^\d]/g, '');
+                    e.target.value = value;
+                    setValue('address.zipCode', value);
+                  }}
                 />
                 {errors.address?.zipCode && (
                   <p className="text-xs text-red-500">
                     {errors.address.zipCode.message}
                   </p>
                 )}
+                <p className="text-xs text-gray-500">
+                  Philippine ZIP codes are 4 digits (e.g., 1000 for Manila)
+                </p>
               </div>
             </div>
 

@@ -42,6 +42,8 @@
     "embla-carousel-react": "^8.2.1",
     "framer-motion": "^11.5.4",
     "holy-loader": "^2.3.7",
+    "jspdf": "^2.5.2",
+    "jspdf-autotable": "^3.5.28",
     "lucide-react": "^0.438.0",
     "next": "14.2.7",
     "nodemailer": "^6.10.0",

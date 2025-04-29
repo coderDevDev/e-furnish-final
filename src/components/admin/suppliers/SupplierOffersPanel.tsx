@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -25,6 +25,7 @@ type Offer = {
   price: number;
   discount_percentage: number | null;
   min_order_quantity: number;
+  stock_quantity: number;
   category: string;
   status: 'active' | 'inactive' | 'draft';
   is_featured: boolean;
@@ -216,9 +217,15 @@ export default function SupplierOffersPanel({
                   Place Order
                 </Button>
               </div>
-              <div className="flex items-center text-xs text-muted-foreground gap-2">
-                <Tag className="h-3 w-3" />
-                <span>Min. order: {offer.min_order_quantity} units</span>
+              <div className="flex flex-col gap-2 text-xs text-muted-foreground">
+                <div className="flex items-center gap-2">
+                  <Package className="h-3 w-3" />
+                  <span>Available stock: {offer.stock_quantity} units</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Tag className="h-3 w-3" />
+                  <span>Min. order: {offer.min_order_quantity} units</span>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -229,6 +236,22 @@ export default function SupplierOffersPanel({
 
   const activeOffers = offers.filter(offer => offer.status === 'active');
   const allOffers = offers;
+
+  const refreshOffers = useCallback(async () => {
+    try {
+      const { data, error } = await supabase
+        .from('supplier_offers')
+        .select('*')
+        .eq('supplier_id', supplierId)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setOffers(data);
+    } catch (error) {
+      console.error('Error refreshing offers:', error);
+      toast.error('Failed to refresh offers');
+    }
+  }, [supplierId]);
 
   return (
     <div className="space-y-6">
@@ -302,6 +325,10 @@ export default function SupplierOffersPanel({
           offer={selectedOffer}
           supplierId={supplierId}
           supplierName={supplierName}
+          onSuccess={() => {
+            refreshOffers();
+            setSelectedOffer(null);
+          }}
         />
       )}
     </div>

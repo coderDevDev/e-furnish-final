@@ -52,6 +52,7 @@ import {
   CardDescription
 } from '@/components/ui/card';
 import { OrderTimeline } from '@/app/admin/customer-orders/components/OrderTimeline';
+import { Label } from '@/components/ui/label';
 
 type OrderItem = {
   offer_id: string;
@@ -90,6 +91,45 @@ OrderHistory.defaultProps = {
   supplierId: '' // Empty string as fallback (will show no results)
 };
 
+type OrderStatus =
+  | 'pending'
+  | 'processing'
+  | 'shipped'
+  | 'delivered'
+  | 'cancelled';
+
+type StatusUpdateReason = {
+  [key in OrderStatus]: string[];
+};
+
+const STATUS_REASONS: StatusUpdateReason = {
+  pending: ['Awaiting confirmation', 'Payment verification', 'Other (specify)'],
+  processing: [
+    'Order confirmed',
+    'In preparation',
+    'Stock verification',
+    'Other (specify)'
+  ],
+  shipped: [
+    'In transit',
+    'Out for delivery',
+    'Shipping delay',
+    'Other (specify)'
+  ],
+  delivered: [
+    'Successfully delivered',
+    'Received by customer',
+    'Other (specify)'
+  ],
+  cancelled: [
+    'Out of stock',
+    'Customer request',
+    'Payment failed',
+    'Shipping issues',
+    'Other (specify)'
+  ]
+};
+
 export default function OrderHistory({ supplierId = '' }: OrderHistoryProps) {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
@@ -98,6 +138,9 @@ export default function OrderHistory({ supplierId = '' }: OrderHistoryProps) {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [showOrderDetails, setShowOrderDetails] = useState(false);
   const [updatingStatus, setUpdatingStatus] = useState(false);
+  const [selectedStatus, setSelectedStatus] = useState<string>('');
+  const [statusReason, setStatusReason] = useState<string>('');
+  const [customReason, setCustomReason] = useState('');
   const supabase = createClientComponentClient();
 
   useEffect(() => {
@@ -240,53 +283,67 @@ export default function OrderHistory({ supplierId = '' }: OrderHistoryProps) {
     }
   };
 
-  const updateOrderStatus = async (orderId: string, uiStatus: string) => {
+  const updateOrderStatus = async (orderId: string, newStatus: string) => {
     if (updatingStatus) return;
+
+    // Use custom reason if "Other" is selected, otherwise use selected reason
+    const finalReason =
+      statusReason === 'Other (specify)' ? customReason : statusReason;
+
+    if (!finalReason) {
+      toast.error('Please provide a reason for the status change');
+      return;
+    }
 
     try {
       setUpdatingStatus(true);
+      const dbStatus = mapUiStatusToDbStatus(newStatus);
 
-      // Convert UI status to database status
-      const dbStatus = mapUiStatusToDbStatus(uiStatus);
-
-      // Update the order in Supabase with the correct database value
       const { error } = await supabase
         .from('supplier_orders')
         .update({
           status: dbStatus,
+          status_reason: finalReason,
           updated_at: new Date().toISOString()
         })
         .eq('id', orderId);
 
       if (error) throw error;
 
-      // Show success message with the UI status for user clarity
-      toast.success(`Order status updated to ${uiStatus}`);
-
-      // Update local state with database values
+      // Update local state
       setOrders(prevOrders =>
         prevOrders.map(order =>
           order.id === orderId
             ? {
                 ...order,
                 status: dbStatus,
+                status_reason: finalReason,
                 updated_at: new Date().toISOString()
               }
             : order
         )
       );
 
-      // Update selected order if it's the one being viewed
+      // Update selected order if it's being viewed
       if (selectedOrder && selectedOrder.id === orderId) {
         setSelectedOrder({
           ...selectedOrder,
           status: dbStatus,
+          status_reason: finalReason,
           updated_at: new Date().toISOString()
         });
       }
-    } catch (error) {
+
+      toast.success('Order status updated successfully');
+
+      // Reset form and close modal
+      setSelectedStatus('');
+      setStatusReason('');
+      setCustomReason('');
+      setShowOrderDetails(false); // Close the modal
+    } catch (error: any) {
       console.error('Error updating order status:', error);
-      toast.error('Failed to update order status');
+      toast.error(`Failed to update order status: ${error.message}`);
     } finally {
       setUpdatingStatus(false);
     }
@@ -534,55 +591,125 @@ export default function OrderHistory({ supplierId = '' }: OrderHistoryProps) {
                   <Card className="border">
                     <CardHeader className="pb-2">
                       <CardTitle className="text-sm font-medium">
-                        Order Status
+                        Update Order Status
                       </CardTitle>
                       <CardDescription>
-                        Current status and timeline
+                        Change the current order status
                       </CardDescription>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="space-y-4">
+                      {/* Status Timeline */}
                       <OrderTimeline status={selectedOrder.status} />
-                    </CardContent>
-                  </Card>
-                </div>
 
-                <div className="mt-6">
-                  <h3 className="text-sm font-medium mb-2">
-                    Update Order Status
-                  </h3>
-                  <div className="flex flex-wrap gap-2">
-                    {['processing', 'shipped', 'delivered', 'cancelled'].map(
-                      uiStatus => {
-                        // Get the equivalent DB status for comparison
-                        const dbStatus = mapUiStatusToDbStatus(uiStatus);
-
-                        return (
-                          <Button
-                            key={uiStatus}
-                            size="sm"
-                            variant={
-                              selectedOrder.status === dbStatus
-                                ? 'default'
-                                : 'outline'
-                            }
-                            onClick={() =>
-                              updateOrderStatus(selectedOrder.id, uiStatus)
-                            }
+                      {/* Status Update Form */}
+                      <div className="grid gap-4 pt-4 border-t">
+                        <div className="grid gap-2">
+                          <Label className="font-medium">
+                            Select new status
+                          </Label>
+                          <Select
+                            value={selectedStatus}
+                            onValueChange={setSelectedStatus}
                             disabled={
                               updatingStatus ||
-                              selectedOrder.status === 'delivered' ||
-                              selectedOrder.status === 'cancelled'
+                              selectedOrder?.status === 'delivered' ||
+                              selectedOrder?.status === 'cancelled'
                             }>
-                            {updatingStatus ? (
-                              <Loader2 className="h-3 w-3 animate-spin mr-2" />
-                            ) : null}
-                            {uiStatus.charAt(0).toUpperCase() +
-                              uiStatus.slice(1)}
-                          </Button>
-                        );
-                      }
-                    )}
-                  </div>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Choose status" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="processing">
+                                Processing
+                              </SelectItem>
+                              <SelectItem value="shipped">Shipped</SelectItem>
+                              <SelectItem value="delivered">
+                                Delivered
+                              </SelectItem>
+                              <SelectItem value="cancelled">
+                                Cancelled
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        {selectedStatus && (
+                          <div className="grid gap-2">
+                            <Label className="font-medium">
+                              Select reason for status change
+                            </Label>
+                            <Select
+                              value={statusReason}
+                              onValueChange={value => {
+                                setStatusReason(value);
+                                if (value !== 'Other (specify)') {
+                                  setCustomReason('');
+                                }
+                              }}
+                              disabled={updatingStatus}>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Choose reason" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {STATUS_REASONS[
+                                  selectedStatus as OrderStatus
+                                ]?.map(reason => (
+                                  <SelectItem key={reason} value={reason}>
+                                    {reason}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+
+                            {statusReason === 'Other (specify)' && (
+                              <div className="grid gap-2">
+                                <Label className="font-medium">
+                                  Specify reason
+                                </Label>
+                                <Input
+                                  placeholder="Enter custom reason"
+                                  value={customReason}
+                                  onChange={e =>
+                                    setCustomReason(e.target.value)
+                                  }
+                                  disabled={updatingStatus}
+                                />
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        <Button
+                          className="w-full mt-2"
+                          disabled={
+                            updatingStatus ||
+                            !selectedStatus ||
+                            !statusReason ||
+                            (statusReason === 'Other (specify)' &&
+                              !customReason) ||
+                            selectedOrder?.status === 'delivered' ||
+                            selectedOrder?.status === 'cancelled'
+                          }
+                          onClick={() => {
+                            if (selectedOrder) {
+                              updateOrderStatus(
+                                selectedOrder.id,
+                                selectedStatus
+                              );
+                            }
+                          }}>
+                          {updatingStatus ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              Updating...
+                            </>
+                          ) : (
+                            'Update Status'
+                          )}
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
                 </div>
               </div>
 
