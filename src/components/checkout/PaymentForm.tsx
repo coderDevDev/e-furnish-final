@@ -71,10 +71,12 @@ export function PaymentForm({ onNext }: PaymentFormProps) {
   const supabase = createClientComponentClient();
   const [shippingSettings, setShippingSettings] =
     useState<ShippingSettings | null>(null);
-  const [shippingFee, setShippingFee] = useState<number>(0);
+  // const [shippingFee, setShippingFee] = useState<number>(0);
   const deliveryAddress = useAppSelector(
     state => state.checkout.deliveryAddress
   );
+
+  const shippingFee = useAppSelector(state => state.checkout.shippingFee);
 
   const hasItems = items && items.length > 0;
   const calculateTotals = () => {
@@ -441,7 +443,7 @@ export function PaymentForm({ onNext }: PaymentFormProps) {
         user_id: userProfile.user.id,
         items: orderItems,
         total_amount: total,
-        shipping_fee: calculatedShippingFee,
+        shipping_fee: shippingFee,
         delivery_address: deliveryAddress.address,
         delivery_municipality: extractMunicipalityFromAddress(
           deliveryAddress.address
@@ -549,7 +551,7 @@ export function PaymentForm({ onNext }: PaymentFormProps) {
 
           {selectedMethod === 'cod' ? (
             <>
-              <FormField
+              {/* <FormField
                 control={form.control}
                 name="deliveryAddress"
                 render={({ field }) => (
@@ -561,7 +563,7 @@ export function PaymentForm({ onNext }: PaymentFormProps) {
                     <FormMessage />
                   </FormItem>
                 )}
-              />
+              /> */}
 
               <Button
                 type="submit"

@@ -111,7 +111,9 @@ export default function OrderSummary() {
             )}
           </div>
           {!address ? (
-            <span className="text-gray-400">Please enter delivery address</span>
+            <span className="text-gray-400">
+              Please enter delivery addresss
+            </span>
           ) : (
             <span>
               {shippingFee === 0
