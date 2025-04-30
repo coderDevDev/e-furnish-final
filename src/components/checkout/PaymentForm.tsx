@@ -585,41 +585,6 @@ export function PaymentForm({ onNext }: PaymentFormProps) {
         </form>
       </Form>
 
-      <div className="space-y-2 p-4 bg-muted rounded-md">
-        <div className="flex justify-between">
-          <span className="text-sm">Subtotal:</span>
-          <span className="text-sm">
-            ₱
-            {calculateTotals().subtotal.toLocaleString('en-PH', {
-              minimumFractionDigits: 2,
-              maximumFractionDigits: 2
-            })}
-          </span>
-        </div>
-        <div className="flex justify-between">
-          <span className="text-sm">Shipping Fee:</span>
-          <span className="text-sm">
-            {shippingFee === 0
-              ? 'Free Shipping'
-              : `₱${shippingFee.toLocaleString('en-PH', {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2
-                })}`}
-          </span>
-        </div>
-        {/* <Separator /> */}
-        <div className="flex justify-between font-medium">
-          <span>Total:</span>
-          <span>
-            ₱
-            {calculateTotals().total.toLocaleString('en-PH', {
-              minimumFractionDigits: 2,
-              maximumFractionDigits: 2
-            })}
-          </span>
-        </div>
-      </div>
-
       <Dialog open={successDialogOpen} onOpenChange={setSuccessDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
