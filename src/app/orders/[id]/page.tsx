@@ -410,7 +410,7 @@ export default function OrderDetailsPage({ params }: OrderDetailsProps) {
                 <span className="font-medium">Total Amount</span>
                 <span className="font-bold">
                   ₱
-                  {order.total_amount.toLocaleString('en-PH', {
+                  {parseFloat(order.total_amount).toLocaleString('en-PH', {
                     minimumFractionDigits: 2,
                     maximumFractionDigits: 2
                   })}

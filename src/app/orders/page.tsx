@@ -180,7 +180,7 @@ export default function OrdersPage() {
                       ) && ' • Includes customized items'}
                     </p>
                     <p className="font-medium text-lg">
-                      ₱{order.total_amount.toLocaleString()}
+                      ₱{parseFloat(order.total_amount).toLocaleString()}
                     </p>
                   </div>
                   <Button variant="outline" size="sm" className="gap-1">
