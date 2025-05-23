@@ -14,9 +14,35 @@ import {
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { FileText, CheckCircle, XCircle, Clock } from 'lucide-react';
+import {
+  FileText,
+  CheckCircle,
+  XCircle,
+  Clock,
+  Pencil,
+  MoreVertical,
+  Trash2
+} from 'lucide-react';
 import { format } from 'date-fns';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger
+} from '@/components/ui/dropdown-menu';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle
+} from '@/components/ui/alert-dialog';
+import { toast } from 'sonner';
 
 type ApplicationStatus = 'pending' | 'approved' | 'rejected';
 
@@ -28,13 +54,23 @@ type Supplier = {
   approved_at?: string;
   rejected_at?: string;
   notes?: string;
-  document_urls?: string[];
+  document_urls?: Array<{
+    url: string;
+    name: string;
+    type: string;
+  }>;
 };
 
 export default function ApplicationStatusPage() {
   const [supplier, setSupplier] = useState<Supplier | null>(null);
   const [loading, setLoading] = useState(true);
   const supabase = createClientComponentClient();
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [documentToDelete, setDocumentToDelete] = useState<{
+    url: string;
+    name: string;
+  } | null>(null);
+  const router = useRouter();
 
   useEffect(() => {
     fetchSupplierData();
@@ -75,6 +111,68 @@ export default function ApplicationStatusPage() {
       console.error('Error fetching supplier data:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleEditDocuments = () => {
+    router.push('/profile?tab=permits');
+  };
+
+  const handleDeleteDocument = async () => {
+    try {
+      if (!documentToDelete || !supplier) return;
+
+      const {
+        data: { session }
+      } = await supabase.auth.getSession();
+      if (!session) return;
+
+      // Remove from storage
+      const urlParts = documentToDelete.url.split('/');
+      const fileName = urlParts[urlParts.length - 1];
+      const filePath = `documents/user-permits/${session.user.id}/${fileName}`;
+
+      const { error: storageError } = await supabase.storage
+        .from('documents')
+        .remove([filePath]);
+
+      if (storageError) throw storageError;
+
+      // Update document_urls in profile
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('document_urls')
+        .eq('id', session.user.id)
+        .single();
+
+      const updatedDocs =
+        profile?.document_urls?.filter(
+          doc => doc.url !== documentToDelete.url
+        ) || [];
+
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({
+          document_urls: updatedDocs,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', session.user.id);
+
+      if (updateError) throw updateError;
+
+      // Update local state
+      setSupplier({
+        ...supplier,
+        document_urls: updatedDocs
+      });
+
+      toast.success('Document deleted successfully');
+    } catch (error) {
+      console.error('Error deleting document:', error);
+      toast.error('Failed to delete document');
+    } finally {
+      setDeleteDialogOpen(false);
+      setDocumentToDelete(null);
     }
   };
 
@@ -215,21 +313,78 @@ export default function ApplicationStatusPage() {
 
           {supplier.document_urls && supplier.document_urls.length > 0 && (
             <div>
-              <h3 className="font-medium mb-2">Submitted Documents</h3>
+              <div className="flex justify-between items-center mb-2">
+                <h3 className="font-medium">Submitted Documents</h3>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleEditDocuments}
+                  className="flex items-center gap-2">
+                  <Pencil className="h-4 w-4" />
+                  Manage Documents
+                </Button>
+              </div>
               <ul className="space-y-2">
-                {supplier.document_urls.map((url, index) => (
+                {supplier.document_urls.map((doc, index) => (
                   <li key={index}>
-                    <a
-                      href={url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center p-2 bg-gray-50 border rounded-md hover:bg-gray-100">
-                      <FileText className="h-4 w-4 mr-2 text-blue-500" />
-                      <span className="text-sm">Document {index + 1}</span>
-                    </a>
+                    <div className="flex items-center justify-between p-2 bg-gray-50 border rounded-md">
+                      <a
+                        href={doc.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center flex-1 hover:bg-gray-100">
+                        <FileText className="h-4 w-4 mr-2 text-blue-500" />
+                        <div>
+                          <span className="text-sm font-medium">
+                            {doc.name}
+                          </span>
+                          <p className="text-xs text-gray-500">{doc.type}</p>
+                        </div>
+                      </a>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="sm">
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem
+                            className="text-red-600"
+                            onClick={() => {
+                              setDocumentToDelete(doc);
+                              setDeleteDialogOpen(true);
+                            }}>
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
                   </li>
                 ))}
               </ul>
+
+              <AlertDialog
+                open={deleteDialogOpen}
+                onOpenChange={setDeleteDialogOpen}>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Delete Document</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Are you sure you want to delete "{documentToDelete?.name}
+                      "? This action cannot be undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      className="bg-red-600 hover:bg-red-700"
+                      onClick={handleDeleteDocument}>
+                      Delete
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </div>
           )}
         </CardContent>

@@ -57,6 +57,8 @@ export default function ProfilePage() {
   const [updating, setUpdating] = useState(false);
   const [profile, setProfile] = useState<any>(null);
   const [userRole, setUserRole] = useState<string>('');
+  const [supplierStatus, setSupplierStatus] = useState<string | null>(null);
+  const [isCheckingApplication, setIsCheckingApplication] = useState(true);
   const router = useRouter();
   const supabase = createClientComponentClient();
 
@@ -77,6 +79,7 @@ export default function ProfilePage() {
 
   useEffect(() => {
     loadProfile();
+    checkSupplierStatus();
   }, []);
 
   const loadProfile = async () => {
@@ -123,6 +126,32 @@ export default function ProfilePage() {
       toast.error('Failed to load profile');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const checkSupplierStatus = async () => {
+    try {
+      setIsCheckingApplication(true);
+      const {
+        data: { session }
+      } = await supabase.auth.getSession();
+      if (!session) return;
+
+      const { data: supplier, error } = await supabase
+        .from('suppliers')
+        .select('status')
+        .eq('user_id', session.user.id)
+        .single();
+
+      if (error) {
+        console.error('Error checking supplier status:', error);
+      } else {
+        setSupplierStatus(supplier?.status || null);
+      }
+    } catch (error) {
+      console.error('Error:', error);
+    } finally {
+      setIsCheckingApplication(false);
     }
   };
 
@@ -186,7 +215,19 @@ export default function ProfilePage() {
           <TabsList className="grid w-full max-w-md grid-cols-1">
             <TabsTrigger value="profile">Profile</TabsTrigger>
             {userRole === 'admin' && (
-              <TabsTrigger value="permits">Permits</TabsTrigger>
+              <TabsTrigger value="permits">
+                Permits
+                {supplierStatus === 'pending' && (
+                  <span className="ml-2 text-xs bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded-full">
+                    Pending
+                  </span>
+                )}
+                {supplierStatus === 'approved' && (
+                  <span className="ml-2 text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded-full">
+                    Approved
+                  </span>
+                )}
+              </TabsTrigger>
             )}
           </TabsList>
         </div>
@@ -374,7 +415,13 @@ export default function ProfilePage() {
 
         {userRole === 'admin' && (
           <TabsContent value="permits">
-            <PermitsTab />
+            {isCheckingApplication ? (
+              <div className="flex justify-center items-center py-8">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              </div>
+            ) : (
+              <PermitsTab supplierStatus={supplierStatus} />
+            )}
           </TabsContent>
         )}
       </Tabs>

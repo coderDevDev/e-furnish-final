@@ -67,7 +67,11 @@ interface DocumentInfo {
   name: string;
 }
 
-export default function PermitsTab() {
+interface PermitsTabProps {
+  supplierStatus: string | null;
+}
+
+export default function PermitsTab({ supplierStatus }: PermitsTabProps) {
   const [documents, setDocuments] = useState<File[]>([]);
   const [selectedType, setSelectedType] = useState<PermitType>(
     PermitType.MAYORS_PERMIT
@@ -82,6 +86,7 @@ export default function PermitsTab() {
   const [editingDocument, setEditingDocument] = useState<DocumentInfo | null>(
     null
   );
+  const [isCheckingApplication, setIsCheckingApplication] = useState(true);
   const supabase = createClientComponentClient();
 
   useEffect(() => {
@@ -108,6 +113,8 @@ export default function PermitsTab() {
     } catch (error) {
       console.error('Error loading documents:', error);
       toast.error('Failed to load existing documents');
+    } finally {
+      setIsCheckingApplication(false);
     }
   };
 
@@ -277,6 +284,59 @@ export default function PermitsTab() {
     }
   };
 
+  if (isCheckingApplication) {
+    return (
+      <Card>
+        <CardContent className="flex justify-center items-center py-8">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Show read-only view if application is pending or approved
+  if (supplierStatus === 'pending' || supplierStatus === 'approved') {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Business Permits & Certifications</CardTitle>
+          <CardDescription>
+            {supplierStatus === 'pending'
+              ? 'Your application is under review. Documents cannot be modified at this time.'
+              : 'Your documents have been approved. Contact support for any changes.'}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {existingDocs.length > 0 && (
+            <div className="mb-6">
+              <h3 className="text-sm font-medium mb-3">Submitted Documents</h3>
+              <div className="grid gap-2">
+                {existingDocs.map((doc, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center justify-between p-2 border rounded-md hover:bg-gray-50">
+                    <a
+                      href={doc.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center flex-1">
+                      <FileText className="h-4 w-4 text-blue-500 mr-2" />
+                      <div>
+                        <span className="text-sm font-medium">{doc.name}</span>
+                        <p className="text-xs text-gray-500">{doc.type}</p>
+                      </div>
+                    </a>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Show full edit functionality for rejected or no application
   return (
     <Card>
       <CardHeader>
